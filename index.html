@@ -119,6 +119,19 @@ body.splash{overflow:hidden}
 .chip2.warn{background:var(--pe-bg);color:var(--pe)}
 .porcobrar{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--pe-bg);color:var(--pe);border-radius:12px;padding:12px 14px;font-weight:700}
 .porcobrar b{font-family:var(--font-display);font-size:1.15rem}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.cchip{border:1.5px solid var(--line);background:transparent;border-radius:999px;padding:9px 14px;font-weight:600;font-size:.85rem}
+.cchip[aria-pressed="true"]{background:var(--out-bg);color:var(--out);border-color:var(--out)}
+button.gr{text-align:left;border:0;background:transparent;width:100%;padding:6px 0;color:inherit;font:inherit;border-radius:10px;cursor:pointer}
+button.gr:active{background:var(--bg)}
+.gtot{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:var(--font-display);font-size:1.1rem}
+.gtot b{color:var(--out);font-size:1.4rem}
+.gent{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:6px 6px 6px 12px}
+.gent .t{flex:1;min-width:0;border:0;background:transparent;text-align:left;padding:6px 0}
+.gent .t b{display:block;font-family:var(--font-display);font-size:1.05rem;color:var(--out)}
+.gent .t small{display:block;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gent .borrar{border:1px solid var(--out);color:var(--out);background:transparent;border-radius:999px;padding:9px 13px;font-weight:600;font-size:.82rem;white-space:nowrap}
+.gent.sel{border-color:var(--accent)}
 .nota-flujo{font-size:.8rem;color:var(--soft);margin:0}
 .adbox{background:var(--ad-bg);border:2px solid var(--ad);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .adtop{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -255,6 +268,7 @@ body{margin:0}
 
     <section class="gbox" aria-label="Gastos del mes">
       <div class="ghead"><h2>Gastos del mes</h2><span class="v num" id="gTot"></span></div>
+      <p class="nota-flujo" style="margin:-4px 0 0">Toca una categoría para ver, agregar, cambiar o borrar sus gastos.</p>
       <div class="gl" id="gList"></div>
       <div class="gsub"><span>Subtotal de gastos</span><b class="num out" id="gSub"></b></div>
       <button class="btn" type="button" id="addGasto">+ Anotar un gasto</button>
@@ -445,6 +459,28 @@ body{margin:0}
   </div>
 </div>
 
+<div class="scrim" id="scrimG" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="gTitle">
+    <header>
+      <h2 id="gTitle" style="text-transform:none">Gastos</h2>
+      <button class="x" type="button" id="closeG" aria-label="Cerrar">✕</button>
+    </header>
+    <div class="chips" id="gChips" role="group" aria-label="Categoría"></div>
+    <div class="gtot"><span id="gCatNombre"></span><b class="num" id="gCatTotal"></b></div>
+    <form class="form" id="gForm" autocomplete="off">
+      <label for="gMonto"><span>Monto ($)</span><input id="gMonto" type="number" inputmode="numeric" min="0" step="1" placeholder="0" required></label>
+      <label for="gFecha"><span>Día</span><input id="gFecha" type="date" required></label>
+      <label class="full" for="gNota"><span>Nota (opcional)</span><input id="gNota" type="text" maxlength="80" placeholder="Ej.: arriendo de noviembre"></label>
+      <div class="full tools">
+        <button class="btn primary" style="flex:1" type="submit" id="gSave">Agregar</button>
+        <button class="btn" type="button" id="gCancel" hidden>Cancelar</button>
+      </div>
+      <button class="btn full" type="button" id="gDel" hidden style="border-color:var(--out);color:var(--out)">Borrar este gasto</button>
+    </form>
+    <div class="entries" id="gEntries"></div>
+  </div>
+</div>
+
 <div class="scrim" id="scrimNotas" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="notasTitle">
     <header>
@@ -561,7 +597,7 @@ body{margin:0}
     mlist.forEach(function(e){if(e.type==="gasto"){var c=GCATS.indexOf(e.cat)>=0?e.cat:"Otros";gc[c]+=e.amount}});
     var gmax=Math.max.apply(null,GCATS.map(function(c){return gc[c]}).concat([1]));
     $("gList").innerHTML=GCATS.filter(function(c){return c!=="Otros"||gc[c]>0}).map(function(c){
-      return '<div class="gr"><span class="n">'+c+'<small>Se paga con '+BILLETERA[c]+'</small></span><span class="a num">'+money(gc[c])+'</span><span class="b"><i style="width:'+Math.round(gc[c]/gmax*100)+'%"></i></span></div>'}).join("");
+      return '<button type="button" class="gr" data-gcat="'+c+'"><span class="n">'+c+'<small>Se paga con '+BILLETERA[c]+' · toca para ver o cambiar</small></span><span class="a num">'+money(gc[c])+'</span><span class="b"><i style="width:'+Math.round(gc[c]/gmax*100)+'%"></i></span></button>'}).join("");
     var wm={};
     GCATS.forEach(function(c){var w=BILLETERA[c];(wm[w]=wm[w]||{sale:0,cats:[]});if(gc[c]>0){wm[w].sale+=gc[c];wm[w].cats.push(c)}});
     var wh=['<div class="wr"><span class="w"><b>'+AHORRO_BIL+'</b><small>Ahorro · total guardado</small></span><b class="num" style="color:var(--accent)">'+money(ts.ah)+'</b></div>'];
@@ -747,7 +783,7 @@ body{margin:0}
     else{$("notasTxt").select();$("notasEstado").textContent="Selecciona y copia a mano."}});
   $("closeSheet").addEventListener("click",closeDay);
   $("scrim").addEventListener("click",function(ev){if(ev.target===$("scrim"))closeDay()});
-  document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){if(!$("scrimNotas").hidden)cerrarNotas();else if(!$("scrim").hidden)closeDay()}});
+  document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){if(!$("scrimNotas").hidden)cerrarNotas();else if(!$("scrimG").hidden)gCerrar();else if(!$("scrim").hidden)closeDay()}});
   (function(){var sm=$("selMes"),sa=$("selAnio");
     MESES.forEach(function(n,i){var o=document.createElement("option");o.value=i;o.textContent=n.charAt(0).toUpperCase()+n.slice(1);sm.appendChild(o)});
     for(var a=2024;a<=2036;a++){var o=document.createElement("option");o.value=a;o.textContent=a;sa.appendChild(o)}})();
@@ -757,7 +793,46 @@ body{margin:0}
   $("next").addEventListener("click",function(){view=new Date(view.getFullYear(),view.getMonth()+1,1);render()});
   $("hoyBtn").addEventListener("click",function(){var t=new Date();view=new Date(t.getFullYear(),t.getMonth(),1);render()});
   document.querySelectorAll(".bar button").forEach(function(b){b.addEventListener("click",function(){show(b.dataset.view)})});
-  $("addGasto").addEventListener("click",function(){var t=new Date();view=new Date(t.getFullYear(),t.getMonth(),1);render();openDay(t.getDate(),"gasto")});
+
+  // ---------- Gastos por categoria: ver, agregar, cambiar o borrar
+  var gCat="Víveres",gEdit=null,gConfirm=null,gTimer=null;
+  function gEnMes(){var mk=monthKey(view.getFullYear(),view.getMonth());return data.entries.filter(function(e){return e.type==="gasto"&&e.date.indexOf(mk)===0&&(GCATS.indexOf(e.cat)>=0?e.cat:"Otros")===gCat}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0})}
+  function gFechaPorDefecto(){var t=new Date();return (t.getFullYear()===view.getFullYear()&&t.getMonth()===view.getMonth())?iso(t.getFullYear(),t.getMonth(),t.getDate()):iso(view.getFullYear(),view.getMonth(),1)}
+  function gReset(){gEdit=null;$("gMonto").value="";$("gNota").value="";$("gFecha").value=gFechaPorDefecto();$("gSave").textContent="Agregar";$("gCancel").hidden=true;$("gDel").hidden=true;$("gDel").textContent="Borrar este gasto"}
+  function gRender(){
+    $("gTitle").textContent="Gastos de "+MESES[view.getMonth()]+" "+view.getFullYear();
+    $("gChips").innerHTML=GCATS.map(function(c){return '<button type="button" class="cchip" data-c="'+c+'" aria-pressed="'+(c===gCat)+'">'+c+'</button>'}).join("");
+    var l=gEnMes(),tot=l.reduce(function(a,e){return a+e.amount},0);
+    $("gCatNombre").textContent=gCat+" · se paga con "+BILLETERA[gCat];$("gCatTotal").textContent=money(tot);
+    $("gEntries").innerHTML=l.length?l.map(function(e){
+      return '<div class="gent'+(gEdit===e.id?' sel':'')+'"><button type="button" class="t" data-gedit="'+e.id+'"><b class="num">'+money(e.amount)+'</b><small>'+fdate(e.date)+(e.note?' · '+esc(e.note):'')+' · toca para cambiar</small></button>'+
+        '<button type="button" class="borrar" data-gdel="'+e.id+'">'+(gConfirm===e.id?'¿Seguro? Borrar':'Borrar')+'</button></div>'}).join(""):'<p class="hint">Todavía no hay gastos de '+gCat+' este mes. Escribe el monto arriba y pulsa Agregar.</p>';
+  }
+  function gAbrir(c){if(c)gCat=c;gConfirm=null;gReset();gRender();$("scrimG").hidden=false;setTimeout(function(){$("gMonto").focus()},60)}
+  function gCerrar(){$("scrimG").hidden=true;gEdit=null;render()}
+  function gBorrar(id){data.entries=data.entries.filter(function(e){return e.id!==id});save();gConfirm=null;if(gEdit===id)gReset();gRender();render()}
+  $("gList").addEventListener("click",function(ev){var b=ev.target.closest("[data-gcat]");if(b)gAbrir(b.dataset.gcat)});
+  $("addGasto").addEventListener("click",function(){gAbrir()});
+  $("closeG").addEventListener("click",gCerrar);
+  $("scrimG").addEventListener("click",function(ev){if(ev.target===$("scrimG"))gCerrar()});
+  $("gChips").addEventListener("click",function(ev){var b=ev.target.closest("[data-c]");if(!b)return;gCat=b.dataset.c;gConfirm=null;gReset();gRender()});
+  $("gForm").addEventListener("submit",function(ev){
+    ev.preventDefault();var amount=parseFloat($("gMonto").value);if(!(amount>=0))return;
+    var rec={type:"gasto",amount:Math.round(amount),cat:gCat,note:$("gNota").value.trim(),date:$("gFecha").value||gFechaPorDefecto(),hours:0,rate:0,mode:"",dir:1};
+    if(gEdit){var e=data.entries.find(function(x){return x.id===gEdit});if(e){Object.assign(e,rec);delete e.example}}else{rec.id=uid();data.entries.push(rec)}
+    var pf=rec.date.split("-").map(Number);view=new Date(pf[0],pf[1]-1,1);
+    save();gReset();gRender();render();$("gMonto").focus()});
+  $("gCancel").addEventListener("click",function(){gReset();gRender()});
+  $("gDel").addEventListener("click",function(){
+    if(!gEdit)return;if(gConfirm!==gEdit){gConfirm=gEdit;$("gDel").textContent="¿Seguro? Toca otra vez para borrar";clearTimeout(gTimer);gTimer=setTimeout(function(){gConfirm=null;$("gDel").textContent="Borrar este gasto";gRender()},4000);gRender();return}
+    gBorrar(gEdit)});
+  $("gEntries").addEventListener("click",function(ev){
+    var d=ev.target.closest("[data-gdel]"),ed=ev.target.closest("[data-gedit]");
+    if(d){var id=d.dataset.gdel;if(gConfirm!==id){gConfirm=id;clearTimeout(gTimer);gTimer=setTimeout(function(){gConfirm=null;gRender()},4000);gRender();return}gBorrar(id);return}
+    if(ed){var e=data.entries.find(function(x){return x.id===ed.dataset.gedit});if(!e)return;
+      gEdit=e.id;gConfirm=null;$("gMonto").value=e.amount;$("gNota").value=e.note||"";$("gFecha").value=e.date;
+      $("gSave").textContent="Guardar cambios";$("gCancel").hidden=false;$("gDel").hidden=false;gRender();$("gMonto").focus()}});
+
   $("anotarHoy").addEventListener("click",function(){var t=new Date();view=new Date(t.getFullYear(),t.getMonth(),1);render();openDay(t.getDate())});
   document.querySelector(".tiles").addEventListener("click",function(ev){var b=ev.target.closest("[data-go]");if(!b)return;var t=new Date();view=new Date(t.getFullYear(),t.getMonth(),1);render();openDay(t.getDate(),b.dataset.go)});
   $("clearEx").addEventListener("click",function(){
