@@ -567,9 +567,9 @@ body{margin:0}
       return '<div class="gr"><span class="n">'+c+'<small>Se paga con '+BILLETERA[c]+'</small></span><span class="a num">'+money(gc[c])+'</span><span class="b"><i style="width:'+Math.round(gc[c]/gmax*100)+'%"></i></span></div>'}).join("");
     var wm={};
     GCATS.forEach(function(c){var w=BILLETERA[c];(wm[w]=wm[w]||{sale:0,cats:[]});if(gc[c]>0){wm[w].sale+=gc[c];wm[w].cats.push(c)}});
-    var wh=['<div class="wr"><span class="w"><b>'+AHORRO_BIL+'</b><small>Ahorro · total guardado</small></span><b class="num sv">'+money(ts.ah)+'</b></div>'];
+    var wh=['<div class="wr"><span class="w"><b>'+AHORRO_BIL+'</b><small>Ahorro · total guardado</small></span><b class="num" style="color:var(--accent)">'+money(ts.ah)+'</b></div>'];
     ["Mercado Pago","Banco Estado","Prex","Efectivo"].forEach(function(w){var o=wm[w]||{sale:0,cats:[]};
-      wh.push('<div class="wr"><span class="w"><b>'+w+'</b><small>'+(o.cats.length?o.cats.join(" + "):"Sin gastos este mes")+'</small></span><b class="num out">'+(o.sale?"-":"")+money(o.sale)+'</b></div>')});
+      wh.push('<div class="wr"><span class="w"><b>'+w+'</b><small>'+(o.cats.length?o.cats.join(" + "):"Sin gastos este mes")+'</small></span><b class="num" style="color:var(--accent)">'+money(o.sale)+'</b></div>')});
     $("wList").innerHTML=wh.join("");
     $("gTot").textContent=money(ms.out);$("gSub").textContent=money(ms.out);
     $("tEx").textContent=money(ms.ex);$("tExS").textContent=hd(ms)||"Sin horas extras";
