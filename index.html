@@ -291,7 +291,7 @@ body{margin:0}
       <div class="pend" id="xList"></div>
       <div class="rows">
         <div class="row"><span>Subtotal de <span id="xMes"></span> <span class="note" id="xDet"></span></span><b class="num ex" id="xSub"></b></div>
-        <div class="row sum"><span>Total de todos los meses</span><b class="num ex" id="xAll"></b></div>
+        <div class="row sum"><span>Total de <span id="xMes2"></span></span><b class="num ex" id="xAll"></b></div>
       </div>
       <button class="btn" type="button" id="addExtra">+ Anotar horas extras</button>
     </section>
@@ -336,11 +336,6 @@ body{margin:0}
       <div class="porcobrar"><span>Por cobrar este mes</span><b class="num" id="porCobrar"></b></div>
     </section>
 
-    <section class="total" aria-label="Total de todas las cuentas">
-      <small>Total de todas las cuentas</small>
-      <div class="big num" id="gBal"></div>
-      <p class="nota-flujo" id="notaTotal"></p>
-    </section>
 
     <button class="btn primary" type="button" id="pdfBtn2">Compartir PDF por WhatsApp</button>
     <p class="hint pdfmsg" role="status" aria-live="polite"></p>
@@ -620,36 +615,36 @@ body{margin:0}
     $("xList").innerHTML=xl.length?xl.map(function(e){
       var det=e.mode==="dia"?"Día corrido":String(e.hours).replace(".",",")+(e.hours===1?" hora":" horas")+" × "+money(e.rate||0);
       return '<button type="button" class="xitem" data-xedit="'+e.id+'"><span class="t"><b>'+e.date.slice(8)+'/'+e.date.slice(5,7)+'</b> · '+det+'<small>Toca para editar</small></span><b class="num">'+money(e.amount)+'</b></button>'}).join(""):'<p class="hint">Todavía no anotaste horas extras este mes.</p>';
-    $("xTot").textContent=money(ms.ex);$("xMes").textContent=MESES[m];$("xDet").textContent=hd(ms)?"("+hd(ms)+")":"";$("xSub").textContent=money(ms.ex);$("xAll").textContent=money(ts.ex);
+    $("xTot").textContent=money(ms.ex);$("xMes").textContent=MESES[m];$("xDet").textContent=hd(ms)?"("+hd(ms)+")":"";$("xSub").textContent=money(ms.ex);$("xMes2").textContent=MESES[m];$("xAll").textContent=money(ms.ex);
     // Dos resumenes: el mes anterior (ya cobrado, con el boton Pagado) y el mes actual (por cobrar)
     var pdt=new Date(y,m-1,1),py=pdt.getFullYear(),pm=pdt.getMonth(),pk=monthKey(py,pm);
     var pS=sums(data.entries.filter(function(e){return e.date.indexOf(pk)===0}));
-    function cuerpo(S,gcM){
+    function cuerpo(S,gcM,mkey,mes){
+      var ahHasta=sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mkey})).ah,ahPrev=ahHasta-S.ah,totalMes=S.in+S.ex+S.pr-S.out-S.ah+ahHasta;
       var h2='<h3>Salario</h3><div class="rows"><div class="row"><span>Entradas</span><b class="num in">'+money(S.in)+'</b></div>'+
         '<div class="row"><span>Horas extras '+(hd(S)?'<span class="note">('+hd(S)+')</span>':'')+'</span><b class="num ex">'+money(S.ex)+'</b></div>'+
         '<div class="row"><span>Propinas</span><b class="num tp">'+money(S.pr)+'</b></div>'+
         '<div class="row sub2"><span>Subtotal: salario</span><b class="num">'+money(S.in+S.ex+S.pr)+'</b></div></div>';
       h2+='<h3>Gastos</h3><div class="rows">'+GCATS.filter(function(c){return c!=="Otros"||gcM[c]>0}).map(function(c){return '<div class="row"><span>'+c+'</span><b class="num out">'+money(gcM[c])+'</b></div>'}).join("")+
         '<div class="row sub2"><span>Subtotal de gastos</span><b class="num out">'+money(S.out)+'</b></div></div>';
-      h2+='<h3>Ahorro</h3><div class="rows"><div class="row"><span>Ahorro del mes (Copec Pay)</span><b class="num sv">'+money(S.ah)+'</b></div>'+
-        '<div class="row sub2"><span>Subtotal: gastos + ahorro</span><b class="num">'+money(S.out+S.ah)+'</b></div></div>';
+      h2+='<h3>Ahorro</h3><div class="rows"><div class="row"><span>Ahorro de meses anteriores</span><b class="num sv">'+money(ahPrev)+'</b></div>'+
+        '<div class="row"><span>Ahorro de '+mes+'</span><b class="num sv">'+money(S.ah)+'</b></div>'+
+        '<div class="row sub2"><span>Ahorro acumulado (Copec Pay)</span><b class="num sv">'+money(ahHasta)+'</b></div></div>';
+      h2+='<div class="rows" style="margin-top:6px"><div class="row"><span>Subtotal: gastos + ahorro del mes</span><b class="num">'+money(S.out+S.ah)+'</b></div>'+
+        '<div class="row sum"><span>Total de '+mes+'</span><b class="num">'+money(totalMes)+'</b></div></div>';
       return h2;
     }
     function gcDe(mkey){var o={};GCATS.forEach(function(c){o[c]=0});data.entries.forEach(function(e){if(e.type==="gasto"&&e.date.indexOf(mkey)===0)o[GCATS.indexOf(e.cat)>=0?e.cat:"Otros"]+=e.amount});return o}
-    $("tituloA").textContent="Resumen de "+MESES[pm];$("bodyA").innerHTML=cuerpo(pS,gcDe(pk));
-    $("tituloB").textContent="Resumen de "+MESES[m];$("bodyB").innerHTML=cuerpo(ms,gcDe(mk));
+    $("tituloA").textContent="Resumen de "+MESES[pm];$("bodyA").innerHTML=cuerpo(pS,gcDe(pk),pk,MESES[pm]);
+    $("tituloB").textContent="Resumen de "+MESES[m];$("bodyB").innerHTML=cuerpo(ms,gcDe(mk),mk,MESES[m]);
     var cobradoA=!!(data.cierres&&data.cierres[pk]);
     $("chipA").className="chip2 "+(cobradoA?"ok":"warn");$("chipA").textContent=cobradoA?"Cobrado":"Sin marcar como pagado";
-    $("notaA").textContent=cobradoA?"Esto ya lo cobraste. Es lo que se usa para gastar en "+MESES[m]+".":"Cuando te paguen, pulsa Pagado para que cuente.";
+    $("notaA").textContent=cobradoA?"Esto ya lo cobraste.":"Cuando te paguen, pulsa Pagado.";
     $("porCobrar").textContent=money(ms.in+ms.ex+ms.pr);$("notaB").textContent="Todavía no te pagan "+MESES[m]+". Se va armando con lo que anotes.";
     var cm=data.cierres&&data.cierres[pk];
     $("pagadoBtn").hidden=!!cm;
     $("pagadoEstado").innerHTML=cm?'<div class="okbox"><span>✓ '+MESES[pm].charAt(0).toUpperCase()+MESES[pm].slice(1)+' pagado</span><small class="num">Pagado el '+fdate(cm.fecha)+' · salario '+money(pS.in+pS.ex+pS.pr)+'.</small></div><button class="btn" type="button" id="reabrirBtn" style="margin-top:8px;width:100%">Reabrir '+MESES[pm]+'</button>':'';
     $("pagadoAsk").hidden=true;
-    var ahHasta=sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah;
-    var cobrado=cobradoA?(pS.in+pS.ex+pS.pr):0;
-    $("gBal").textContent=money(cobrado-ms.out-ms.ah+ahHasta);
-    $("notaTotal").textContent="Salario cobrado de "+MESES[pm]+" − gastos y ahorro de "+MESES[m]+" + ahorro acumulado en Copec Pay."+(cobradoA?"":" Marca "+MESES[pm]+" como pagado para sumar su salario.")+" Lo de "+MESES[m]+" por cobrar no está incluido.";
     $("exampleBar").hidden=!data.entries.some(function(e){return e.example});
     // calendario
     var first=new Date(y,m,1),pad=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate();
@@ -908,8 +903,8 @@ body{margin:0}
     titulo("Ahorro");
     fila("Ahorro del mes (Copec Pay)",money(sm.ah),PURPLE);
     fila("Subtotal: gastos + ahorro",money(sm.out+sm.ah),INK,true);
-    espacio(130);y-=34;R(40,y-52,515,70,DARK);y-=2;T(54,"F1",9,"TOTAL DE TODAS LAS CUENTAS","0.75 0.8 0.78");y-=30;T(54,"F2",24,money(total),"1 1 1");
-    y-=34;T(40,"F1",8,"Salario del mes - gastos - ahorro del mes + ahorro acumulado en Copec Pay.",GREY);
+    espacio(130);y-=34;R(40,y-52,515,70,DARK);y-=2;T(54,"F1",9,("TOTAL DE "+MESES[m0].toUpperCase()),"0.75 0.8 0.78");y-=30;T(54,"F2",24,money(total),"1 1 1");
+    y-=34;T(40,"F1",8,"Salario del mes - gastos - ahorro del mes + ahorro acumulado (es lo unico que se suma entre meses).",GREY);
     // movimientos
     var NMP={gasto:"Gasto",entrada:"Entrada",extra:"Horas extras",propina:"Propina",adelanto:"Adelanto",ahorro:"Ahorro"};
     if(list.length){
@@ -964,7 +959,7 @@ body{margin:0}
     t+="\n*Gastos por categoría*\n"+GCATS.filter(function(c){return gcs[c]>0}).map(function(c){return c+" ("+BILLETERA[c]+"): "+money(gcs[c])}).join("\n")+"\nSubtotal de gastos: "+money(s.out)+"\n";
     t+="\n*Salario*\nEntradas: "+money(s.in)+"\nHoras extras: "+money(s.ex)+"\nPropinas: "+money(s.pr)+"\n*Subtotal salario: "+money(s.in+s.ex+s.pr)+"*\n";
     t+="\n*Ahorro*\nAhorro del mes (Copec Pay): "+money(s.ah)+"\n*Subtotal gastos + ahorro: "+money(s.out+s.ah)+"*\n";
-    t+="\n*Total de todas las cuentas: "+money(s.in+s.ex+s.pr-s.out-s.ah+sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah)+"*";
+    t+="\n*Total de "+MESES[m]+": "+money(s.in+s.ex+s.pr-s.out-s.ah+sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah)+"*";
     copy(t,"Resumen copiado. Pégalo en WhatsApp.");
   });
   $("copyBackup").addEventListener("click",function(){
