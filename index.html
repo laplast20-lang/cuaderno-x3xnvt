@@ -304,39 +304,31 @@ body{margin:0}
       </div>
     </section>
 
-    <section class="box rep" aria-label="Informe del mes anterior">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 id="subTitulo">Informe del mes anterior</h2><button class="backm" type="button" id="verAnterior">‹ Ver mes anterior</button></div>
+    <section class="box rep" aria-label="Resumen del mes">
+      <h2 id="subTitulo">Resumen del mes</h2>
 
-      <h3>1. Efectivo del mes anterior</h3>
+      <h3>Salario</h3>
       <div class="rows">
-        <div class="row"><span>Entradas de <span class="pm"></span></span><b class="num in" id="rIn"></b></div>
+        <div class="row"><span>Entradas</span><b class="num in" id="rIn"></b></div>
         <div class="row"><span>Horas extras <span class="note" id="rHoras"></span></span><b class="num ex" id="rEx"></b></div>
         <div class="row"><span>Propinas</span><b class="num tp" id="rPr"></b></div>
-        <div class="row ad" id="rDescRow" hidden><span>Adelantos descontados al pagar</span><b class="num" id="rDesc"></b></div>
-        <div class="row warn" id="rNoPagRow" hidden><span>Sin pagar todavía (no cuenta)</span><b class="num" id="rNoPag"></b></div>
-        <div class="row"><span>Sobrante que quedó de <span class="pm"></span></span><b class="num" id="rCarry"></b></div>
-        <div class="row sub2"><span>Subtotal: efectivo del mes anterior</span><b class="num" id="rDisp"></b></div>
+        <div class="row sub2"><span>Subtotal: salario del mes</span><b class="num" id="rIng"></b></div>
       </div>
 
-      <h3>2. Adelantos</h3>
-      <div class="rows">
-        <div class="row ad"><span>Adelantos de <span class="pm"></span></span><b class="num" id="rAd"></b></div>
-      </div>
-
-      <h3 id="resTitulo">3. Resumen de gastos y ahorro</h3>
+      <h3>Gastos</h3>
       <div class="rows" id="resList"></div>
+
+      <h3>Ahorro</h3>
+      <div class="rows">
+        <div class="row"><span>Ahorro del mes (Copec Pay)</span><b class="num sv" id="rAh"></b></div>
+        <div class="row sub2"><span>Subtotal: gastos + ahorro</span><b class="num" id="rGA"></b></div>
+      </div>
     </section>
 
     <section class="total" aria-label="Total de todas las cuentas">
       <small>Total de todas las cuentas</small>
       <div class="big num" id="gBal"></div>
-      <div class="rows" style="margin-top:6px">
-        <div class="row"><span>Efectivo del mes anterior</span><b class="num" id="tDisp"></b></div>
-        <div class="row"><span>Adelantos</span><b class="num" id="tAd"></b></div>
-        <div class="row"><span>Menos gastos y ahorro del mes</span><b class="num" id="tSal"></b></div>
-        <div class="row sub2"><span>Sobrante del mes</span><b class="num" id="tS"></b></div>
-        <div class="row"><span>Ahorro acumulado en Copec Pay</span><b class="num" id="tAh2"></b></div>
-      </div>
+      <p class="nota-flujo">Salario del mes − gastos − ahorro del mes + ahorro acumulado en Copec Pay.</p>
     </section>
 
     <button class="btn primary" type="button" id="anotarHoy">+ Anotar algo de hoy</button>
@@ -590,31 +582,20 @@ body{margin:0}
       var det=e.mode==="dia"?"Día corrido":String(e.hours).replace(".",",")+(e.hours===1?" hora":" horas")+" × "+money(e.rate||0);
       return '<button type="button" class="xitem" data-xedit="'+e.id+'"><span class="t"><b>'+e.date.slice(8)+'/'+e.date.slice(5,7)+'</b> · '+det+'<small>Toca para editar</small></span><b class="num">'+money(e.amount)+'</b></button>'}).join(""):'<p class="hint">Todavía no anotaste horas extras este mes.</p>';
     $("xTot").textContent=money(ms.ex);$("xMes").textContent=MESES[m];$("xDet").textContent=hd(ms)?"("+hd(ms)+")":"";$("xSub").textContent=money(ms.ex);$("xAll").textContent=money(ts.ex);
-    var pd=new Date(y,m-1,1),pk=monthKey(pd.getFullYear(),pd.getMonth()),pR=sums(data.entries.filter(function(e){return e.date.indexOf(pk)===0})),pn=MESES[pd.getMonth()];
-    var pClosed=cerrado(pd.getFullYear(),pd.getMonth()),pIng=pR.in+pR.ex+pR.pr;
-    var pc=data.cierres&&data.cierres[pk],pDesc=(pClosed&&pc&&pc.desc)||0;
-    var carry=ch.disp-(pClosed?pIng-pDesc:0)-pR.ad,subDisp=ch.disp-pR.ad;
-    $("rDescRow").hidden=!pDesc;$("rDesc").textContent="-"+money(pDesc);
-    $("subTitulo").textContent="Informe de "+pn+(pClosed?" · pagado el "+fdate(pc.fecha):(pIng?" · aún sin pagar":""));
-    $("rNoPagRow").hidden=pClosed||!pIng;$("rNoPag").textContent="-"+money(pIng);
-    document.querySelectorAll(".pm").forEach(function(el){el.textContent=pn});
-    $("rIn").textContent=money(pR.in);$("rEx").textContent=money(pR.ex);$("rPr").textContent=money(pR.pr);
-    $("rHoras").textContent=hd(pR)?"("+hd(pR)+")":"";
+    $("subTitulo").textContent="Resumen de "+MESES[m];
+    $("rIn").textContent=money(ms.in);$("rEx").textContent=money(ms.ex);$("rPr").textContent=money(ms.pr);
+    $("rHoras").textContent=hd(ms)?"("+hd(ms)+")":"";
+    $("rIng").textContent=money(ms.in+ms.ex+ms.pr);
     var cm=data.cierres&&data.cierres[mk];
     $("pagadoBtn").hidden=!!cm;
-    $("pagadoEstado").innerHTML=cm?'<div class="okbox"><span>✓ Caja de '+MESES[m]+' cerrada</span><small class="num">Pagado el '+fdate(cm.fecha)+' · ingresos '+money(ch.ing)+'. Se usan en el mes siguiente.</small></div><button class="btn" type="button" id="reabrirBtn" style="margin-top:8px;width:100%">Reabrir caja</button>':'';
+    $("pagadoEstado").innerHTML=cm?'<div class="okbox"><span>✓ Caja de '+MESES[m]+' cerrada</span><small class="num">Pagado el '+fdate(cm.fecha)+' · ingresos '+money(ms.in+ms.ex+ms.pr)+'.</small></div><button class="btn" type="button" id="reabrirBtn" style="margin-top:8px;width:100%">Reabrir caja</button>':'';
     $("pagadoAsk").hidden=true;
-    $("rCarry").textContent=money(carry);$("rDisp").textContent=money(subDisp);
-    $("rAd").textContent=money(pR.ad);
-    $("resTitulo").textContent="3. Resumen de "+MESES[m]+": gastos y ahorro";
     var rl=GCATS.filter(function(c){return c!=="Otros"||gc[c]>0}).map(function(c){return '<div class="row"><span>'+c+'</span><b class="num out">'+money(gc[c])+'</b></div>'});
-    rl.push('<div class="row sub2"><span>Subtotal de gastos</span><b class="num out">'+money(ch.out)+'</b></div>');
-    rl.push('<div class="row"><span>Ahorrado este mes (Copec Pay)</span><b class="num sv">'+money(ch.ah)+'</b></div>');
-    rl.push('<div class="row sub2"><span>Subtotal: gastos + ahorro</span><b class="num">'+money(ch.out+ch.ah)+'</b></div>');
+    rl.push('<div class="row sub2"><span>Subtotal de gastos</span><b class="num out">'+money(ms.out)+'</b></div>');
     $("resList").innerHTML=rl.join("");
-    $("gBal").textContent=money(ch.S+ts.ah);
-    $("tDisp").textContent=money(subDisp);$("tAd").textContent=money(pR.ad);$("tSal").textContent="-"+money(ch.out+ch.ah);
-    $("tS").textContent=money(ch.S);$("tAh2").textContent=money(ts.ah);
+    $("rAh").textContent=money(ms.ah);$("rGA").textContent=money(ms.out+ms.ah);
+    var ahHasta=sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah;
+    $("gBal").textContent=money(ms.in+ms.ex+ms.pr-ms.out-ms.ah+ahHasta);
     $("exampleBar").hidden=!data.entries.some(function(e){return e.example});
     // calendario
     var first=new Date(y,m,1),pad=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate();
@@ -754,7 +735,6 @@ body{margin:0}
     for(var a=2024;a<=2036;a++){var o=document.createElement("option");o.value=a;o.textContent=a;sa.appendChild(o)}})();
   $("mesBtn").addEventListener("click",function(){var j=$("jump");j.hidden=!j.hidden;if(!j.hidden){$("selMes").value=view.getMonth();$("selAnio").value=view.getFullYear()}});
   $("irMes").addEventListener("click",function(){view=new Date(+$("selAnio").value,+$("selMes").value,1);$("jump").hidden=true;render()});
-  $("verAnterior").addEventListener("click",function(){view=new Date(view.getFullYear(),view.getMonth()-1,1);render();window.scrollTo(0,0)});
   $("prev").addEventListener("click",function(){view=new Date(view.getFullYear(),view.getMonth()-1,1);render()});
   $("next").addEventListener("click",function(){view=new Date(view.getFullYear(),view.getMonth()+1,1);render()});
   $("hoyBtn").addEventListener("click",function(){var t=new Date();view=new Date(t.getFullYear(),t.getMonth(),1);render()});
@@ -770,7 +750,7 @@ body{margin:0}
   $("pagadoBtn").addEventListener("click",function(){
     var y=view.getFullYear(),m=view.getMonth(),r=sums(data.entries.filter(function(e){return e.date.indexOf(monthKey(y,m))===0}));
     var du=sinDescontar(y,m).reduce(function(a,e){return a+e.amount},0);
-    $("pagadoTxt").textContent="¿Ya te pagaron? Se cierra la caja de "+MESES[m]+" con ingresos de "+money(r.in+r.ex+r.pr)+" (entradas, horas extras y propinas)."+(du?" Se descuentan "+money(du)+" de adelantos acumulados y la lista de adelantos queda en cero.":"")+" El resto pasa a ser el efectivo del mes siguiente. El ahorro no se toca: sigue sumándose.";
+    $("pagadoTxt").textContent="¿Ya te pagaron? Se cierra la caja de "+MESES[m]+" con ingresos de "+money(r.in+r.ex+r.pr)+" (entradas, horas extras y propinas)."+(du?" Se descuentan "+money(du)+" de adelantos acumulados y la lista de adelantos queda en cero.":"")+" El ahorro no se toca: sigue sumándose.";
     $("pagadoAsk").hidden=false;$("pagadoBtn").hidden=true});
   $("pagadoNo").addEventListener("click",function(){$("pagadoAsk").hidden=true;$("pagadoBtn").hidden=false});
   $("pagadoSi").addEventListener("click",function(){
@@ -796,12 +776,9 @@ body{margin:0}
     l.forEach(function(e){t+=fdate(e.date)+"  "+NM[e.type]+(e.type==="extra"?(e.mode==="dia"?" (día corrido)":" "+e.hours+"h × "+money(e.rate||0)):"")+"  "+(e.type==="gasto"?"-":"")+money(e.amount)+(e.note?"  ("+e.note+")":"")+"\n"});
     var gcs={};GCATS.forEach(function(c){gcs[c]=0});l.forEach(function(e){if(e.type==="gasto"){gcs[GCATS.indexOf(e.cat)>=0?e.cat:"Otros"]+=e.amount}});
     t+="\n*Gastos por categoría*\n"+GCATS.filter(function(c){return gcs[c]>0}).map(function(c){return c+" ("+BILLETERA[c]+"): "+money(gcs[c])}).join("\n")+"\nSubtotal de gastos: "+money(s.out)+"\n";
-    var c2=cadena(y,m),pd2=new Date(y,m-1,1),pR2=sums(data.entries.filter(function(e){return e.date.indexOf(monthKey(pd2.getFullYear(),pd2.getMonth()))===0})),pn2=MESES[pd2.getMonth()];
-    var pc2=data.cierres&&data.cierres[monthKey(pd2.getFullYear(),pd2.getMonth())],carry2=c2.disp-(pc2?(pR2.in+pR2.ex+pR2.pr)-(pc2.desc||0):0)-pR2.ad;
-    t+="\n*Informe de "+pn2+"*\n*1. Efectivo del mes anterior*\nEntradas: "+money(pR2.in)+"\nHoras extras: "+money(pR2.ex)+"\nPropinas: "+money(pR2.pr)+"\nSobrante de "+pn2+": "+money(carry2)+"\n*Subtotal: "+money(c2.disp-pR2.ad)+"*\n";
-    t+="\n*2. Adelantos*\nAdelantos de "+pn2+": "+money(pR2.ad)+"\n";
-    t+="\n*3. Gastos y ahorro de "+MESES[m]+"*\nSubtotal de gastos: "+money(c2.out)+"\nAhorrado: "+money(c2.ah)+"\n*Subtotal: "+money(c2.out+c2.ah)+"*\n";
-    t+="\n*Sobrante del mes: "+money(c2.S)+"*\n*Total de todas las cuentas: "+money(c2.S+sums(data.entries).ah)+"*";
+    t+="\n*Salario*\nEntradas: "+money(s.in)+"\nHoras extras: "+money(s.ex)+"\nPropinas: "+money(s.pr)+"\n*Subtotal salario: "+money(s.in+s.ex+s.pr)+"*\n";
+    t+="\n*Ahorro*\nAhorro del mes (Copec Pay): "+money(s.ah)+"\n*Subtotal gastos + ahorro: "+money(s.out+s.ah)+"*\n";
+    t+="\n*Total de todas las cuentas: "+money(s.in+s.ex+s.pr-s.out-s.ah+sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah)+"*";
     copy(t,"Resumen copiado. Pégalo en WhatsApp.");
   });
   $("copyBackup").addEventListener("click",function(){
