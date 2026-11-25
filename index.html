@@ -113,6 +113,12 @@ header.top h1{font-size:1.2rem;flex:1}
 .portada .go:active{background:rgba(255,255,255,.28)}
 body.splash{overflow:hidden}
 @media (prefers-reduced-motion:reduce){.portada{transition:none}}
+.rhead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.chip2{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;border-radius:999px}
+.chip2.ok{background:var(--in-bg);color:var(--in)}
+.chip2.warn{background:var(--pe-bg);color:var(--pe)}
+.porcobrar{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--pe-bg);color:var(--pe);border-radius:12px;padding:12px 14px;font-weight:700}
+.porcobrar b{font-family:var(--font-display);font-size:1.15rem}
 .nota-flujo{font-size:.8rem;color:var(--soft);margin:0}
 .adbox{background:var(--ad-bg);border:2px solid var(--ad);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .adtop{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -292,43 +298,34 @@ body{margin:0}
       <button class="btn" type="button" id="addAdelanto">+ Anotar un adelanto</button>
     </section>
 
-    <section class="pagado" id="pagadoSec" aria-label="Pagado">
-      <div id="pagadoEstado"></div>
-      <button class="btn primary big" type="button" id="pagadoBtn">Pagado</button>
-      <div class="askbox" id="pagadoAsk" hidden>
-        <p id="pagadoTxt"></p>
-        <div class="btns">
-          <button class="btn primary" type="button" id="pagadoSi">Sí, ya me pagaron</button>
-          <button class="btn" type="button" id="pagadoNo">Todavía no</button>
+    <section class="box rep resm" aria-label="Resumen del mes anterior">
+      <div class="rhead"><h2 id="tituloA">Resumen del mes anterior</h2><span class="chip2" id="chipA"></span></div>
+      <p class="nota-flujo" id="notaA"></p>
+      <div id="bodyA"></div>
+      <div class="pagado" id="pagadoSec">
+        <div id="pagadoEstado"></div>
+        <button class="btn primary big" type="button" id="pagadoBtn">Pagado</button>
+        <div class="askbox" id="pagadoAsk" hidden>
+          <p id="pagadoTxt"></p>
+          <div class="btns">
+            <button class="btn primary" type="button" id="pagadoSi">Sí, ya me pagaron</button>
+            <button class="btn" type="button" id="pagadoNo">Todavía no</button>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="box rep" aria-label="Resumen del mes">
-      <h2 id="subTitulo">Resumen del mes</h2>
-
-      <h3>Salario</h3>
-      <div class="rows">
-        <div class="row"><span>Entradas</span><b class="num in" id="rIn"></b></div>
-        <div class="row"><span>Horas extras <span class="note" id="rHoras"></span></span><b class="num ex" id="rEx"></b></div>
-        <div class="row"><span>Propinas</span><b class="num tp" id="rPr"></b></div>
-        <div class="row sub2"><span>Subtotal: salario del mes</span><b class="num" id="rIng"></b></div>
-      </div>
-
-      <h3>Gastos</h3>
-      <div class="rows" id="resList"></div>
-
-      <h3>Ahorro</h3>
-      <div class="rows">
-        <div class="row"><span>Ahorro del mes (Copec Pay)</span><b class="num sv" id="rAh"></b></div>
-        <div class="row sub2"><span>Subtotal: gastos + ahorro</span><b class="num" id="rGA"></b></div>
-      </div>
+    <section class="box rep resm" aria-label="Resumen del mes actual">
+      <div class="rhead"><h2 id="tituloB">Resumen del mes</h2><span class="chip2 warn">Por cobrar</span></div>
+      <p class="nota-flujo" id="notaB">Todavía no te pagan este mes. Se va armando con lo que anotes.</p>
+      <div id="bodyB"></div>
+      <div class="porcobrar"><span>Por cobrar este mes</span><b class="num" id="porCobrar"></b></div>
     </section>
 
     <section class="total" aria-label="Total de todas las cuentas">
       <small>Total de todas las cuentas</small>
       <div class="big num" id="gBal"></div>
-      <p class="nota-flujo">Salario del mes − gastos − ahorro del mes + ahorro acumulado en Copec Pay.</p>
+      <p class="nota-flujo" id="notaTotal"></p>
     </section>
 
     <button class="btn primary" type="button" id="pdfBtn2">Compartir PDF por WhatsApp</button>
@@ -588,20 +585,35 @@ body{margin:0}
       var det=e.mode==="dia"?"Día corrido":String(e.hours).replace(".",",")+(e.hours===1?" hora":" horas")+" × "+money(e.rate||0);
       return '<button type="button" class="xitem" data-xedit="'+e.id+'"><span class="t"><b>'+e.date.slice(8)+'/'+e.date.slice(5,7)+'</b> · '+det+'<small>Toca para editar</small></span><b class="num">'+money(e.amount)+'</b></button>'}).join(""):'<p class="hint">Todavía no anotaste horas extras este mes.</p>';
     $("xTot").textContent=money(ms.ex);$("xMes").textContent=MESES[m];$("xDet").textContent=hd(ms)?"("+hd(ms)+")":"";$("xSub").textContent=money(ms.ex);$("xAll").textContent=money(ts.ex);
-    $("subTitulo").textContent="Resumen de "+MESES[m];
-    $("rIn").textContent=money(ms.in);$("rEx").textContent=money(ms.ex);$("rPr").textContent=money(ms.pr);
-    $("rHoras").textContent=hd(ms)?"("+hd(ms)+")":"";
-    $("rIng").textContent=money(ms.in+ms.ex+ms.pr);
-    var cm=data.cierres&&data.cierres[mk];
+    // Dos resumenes: el mes anterior (ya cobrado, con el boton Pagado) y el mes actual (por cobrar)
+    var pdt=new Date(y,m-1,1),py=pdt.getFullYear(),pm=pdt.getMonth(),pk=monthKey(py,pm);
+    var pS=sums(data.entries.filter(function(e){return e.date.indexOf(pk)===0}));
+    function cuerpo(S,gcM){
+      var h2='<h3>Salario</h3><div class="rows"><div class="row"><span>Entradas</span><b class="num in">'+money(S.in)+'</b></div>'+
+        '<div class="row"><span>Horas extras '+(hd(S)?'<span class="note">('+hd(S)+')</span>':'')+'</span><b class="num ex">'+money(S.ex)+'</b></div>'+
+        '<div class="row"><span>Propinas</span><b class="num tp">'+money(S.pr)+'</b></div>'+
+        '<div class="row sub2"><span>Subtotal: salario</span><b class="num">'+money(S.in+S.ex+S.pr)+'</b></div></div>';
+      h2+='<h3>Gastos</h3><div class="rows">'+GCATS.filter(function(c){return c!=="Otros"||gcM[c]>0}).map(function(c){return '<div class="row"><span>'+c+'</span><b class="num out">'+money(gcM[c])+'</b></div>'}).join("")+
+        '<div class="row sub2"><span>Subtotal de gastos</span><b class="num out">'+money(S.out)+'</b></div></div>';
+      h2+='<h3>Ahorro</h3><div class="rows"><div class="row"><span>Ahorro del mes (Copec Pay)</span><b class="num sv">'+money(S.ah)+'</b></div>'+
+        '<div class="row sub2"><span>Subtotal: gastos + ahorro</span><b class="num">'+money(S.out+S.ah)+'</b></div></div>';
+      return h2;
+    }
+    function gcDe(mkey){var o={};GCATS.forEach(function(c){o[c]=0});data.entries.forEach(function(e){if(e.type==="gasto"&&e.date.indexOf(mkey)===0)o[GCATS.indexOf(e.cat)>=0?e.cat:"Otros"]+=e.amount});return o}
+    $("tituloA").textContent="Resumen de "+MESES[pm];$("bodyA").innerHTML=cuerpo(pS,gcDe(pk));
+    $("tituloB").textContent="Resumen de "+MESES[m];$("bodyB").innerHTML=cuerpo(ms,gcDe(mk));
+    var cobradoA=!!(data.cierres&&data.cierres[pk]);
+    $("chipA").className="chip2 "+(cobradoA?"ok":"warn");$("chipA").textContent=cobradoA?"Cobrado":"Sin marcar como pagado";
+    $("notaA").textContent=cobradoA?"Esto ya lo cobraste. Es lo que se usa para gastar en "+MESES[m]+".":"Cuando te paguen, pulsa Pagado para que cuente.";
+    $("porCobrar").textContent=money(ms.in+ms.ex+ms.pr);$("notaB").textContent="Todavía no te pagan "+MESES[m]+". Se va armando con lo que anotes.";
+    var cm=data.cierres&&data.cierres[pk];
     $("pagadoBtn").hidden=!!cm;
-    $("pagadoEstado").innerHTML=cm?'<div class="okbox"><span>✓ Caja de '+MESES[m]+' cerrada</span><small class="num">Pagado el '+fdate(cm.fecha)+' · ingresos '+money(ms.in+ms.ex+ms.pr)+'.</small></div><button class="btn" type="button" id="reabrirBtn" style="margin-top:8px;width:100%">Reabrir caja</button>':'';
+    $("pagadoEstado").innerHTML=cm?'<div class="okbox"><span>✓ '+MESES[pm].charAt(0).toUpperCase()+MESES[pm].slice(1)+' pagado</span><small class="num">Pagado el '+fdate(cm.fecha)+' · salario '+money(pS.in+pS.ex+pS.pr)+'.</small></div><button class="btn" type="button" id="reabrirBtn" style="margin-top:8px;width:100%">Reabrir '+MESES[pm]+'</button>':'';
     $("pagadoAsk").hidden=true;
-    var rl=GCATS.filter(function(c){return c!=="Otros"||gc[c]>0}).map(function(c){return '<div class="row"><span>'+c+'</span><b class="num out">'+money(gc[c])+'</b></div>'});
-    rl.push('<div class="row sub2"><span>Subtotal de gastos</span><b class="num out">'+money(ms.out)+'</b></div>');
-    $("resList").innerHTML=rl.join("");
-    $("rAh").textContent=money(ms.ah);$("rGA").textContent=money(ms.out+ms.ah);
     var ahHasta=sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah;
-    $("gBal").textContent=money(ms.in+ms.ex+ms.pr-ms.out-ms.ah+ahHasta);
+    var cobrado=cobradoA?(pS.in+pS.ex+pS.pr):0;
+    $("gBal").textContent=money(cobrado-ms.out-ms.ah+ahHasta);
+    $("notaTotal").textContent="Salario cobrado de "+MESES[pm]+" − gastos y ahorro de "+MESES[m]+" + ahorro acumulado en Copec Pay."+(cobradoA?"":" Marca "+MESES[pm]+" como pagado para sumar su salario.")+" Lo de "+MESES[m]+" por cobrar no está incluido.";
     $("exampleBar").hidden=!data.entries.some(function(e){return e.example});
     // calendario
     var first=new Date(y,m,1),pad=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate();
@@ -754,18 +766,18 @@ body{margin:0}
   });
 
   $("pagadoBtn").addEventListener("click",function(){
-    var y=view.getFullYear(),m=view.getMonth(),r=sums(data.entries.filter(function(e){return e.date.indexOf(monthKey(y,m))===0}));
+    var pdx=new Date(view.getFullYear(),view.getMonth()-1,1),y=pdx.getFullYear(),m=pdx.getMonth(),r=sums(data.entries.filter(function(e){return e.date.indexOf(monthKey(y,m))===0}));
     var du=sinDescontar(y,m).reduce(function(a,e){return a+e.amount},0);
     $("pagadoTxt").textContent="¿Ya te pagaron? Se cierra la caja de "+MESES[m]+" con ingresos de "+money(r.in+r.ex+r.pr)+" (entradas, horas extras y propinas)."+(du?" Se descuentan "+money(du)+" de adelantos acumulados y la lista de adelantos queda en cero.":"")+" El ahorro no se toca: sigue sumándose.";
     $("pagadoAsk").hidden=false;$("pagadoBtn").hidden=true});
   $("pagadoNo").addEventListener("click",function(){$("pagadoAsk").hidden=true;$("pagadoBtn").hidden=false});
   $("pagadoSi").addEventListener("click",function(){
-    var t=new Date(),y=view.getFullYear(),m=view.getMonth();data.cierres=data.cierres||{};
+    var t=new Date(),pdx=new Date(view.getFullYear(),view.getMonth()-1,1),y=pdx.getFullYear(),m=pdx.getMonth();data.cierres=data.cierres||{};
     var mk=monthKey(y,m),ua=sinDescontar(y,m),desc=0,ids=[];
     ua.forEach(function(e){e.saldadoEn=mk;desc+=e.amount;ids.push(e.id)});
     data.cierres[mk]={fecha:iso(t.getFullYear(),t.getMonth(),t.getDate()),desc:desc,ids:ids};save();render()});
   $("pagadoEstado").addEventListener("click",function(ev){
-    if(!ev.target.closest("#reabrirBtn"))return;var mk=monthKey(view.getFullYear(),view.getMonth());
+    if(!ev.target.closest("#reabrirBtn"))return;var pdx=new Date(view.getFullYear(),view.getMonth()-1,1),mk=monthKey(pdx.getFullYear(),pdx.getMonth());
     var cz=data.cierres&&data.cierres[mk];
     if(cz&&cz.ids)data.entries.forEach(function(e){if(cz.ids.indexOf(e.id)>=0&&e.saldadoEn===mk)delete e.saldadoEn});
     if(data.cierres)delete data.cierres[mk];save();render()});
