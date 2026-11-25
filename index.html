@@ -333,7 +333,7 @@ body{margin:0}
       <div class="rhead"><h2 id="tituloB">Resumen del mes</h2><span class="chip2 warn">Por cobrar</span></div>
       <p class="nota-flujo" id="notaB">Todavía no te pagan este mes. Se va armando con lo que anotes.</p>
       <div id="bodyB"></div>
-      <div class="porcobrar"><span>Por cobrar este mes</span><b class="num" id="porCobrar"></b></div>
+      <div class="porcobrar"><span>Por cobrar este mes (ya sin adelantos)</span><b class="num" id="porCobrar"></b></div>
     </section>
 
 
@@ -560,6 +560,8 @@ body{margin:0}
   }
   // Adelantos todavía sin descontar al mes y fecha dados (se acumulan de un mes a otro hasta que pulsas Pagado).
   function sinDescontar(y,m){var k=monthKey(y,m);return data.entries.filter(function(e){return e.type==="adelanto"&&e.date.slice(0,7)<=k&&(!e.saldadoEn||e.saldadoEn>k)})}
+  // Adelantos de un mes: si ya pagaste ese mes, lo que se descontó; si no, lo que se descontará.
+  function adelantosDe(y,m){var c=data.cierres&&data.cierres[monthKey(y,m)];if(c)return c.desc||0;return sinDescontar(y,m).reduce(function(a,e){return a+e.amount},0)}
   function cadena(y,m){
     var keys=data.entries.map(function(e){return e.date.slice(0,7)}).sort();
     var target=y*12+m, first=keys.length?(+keys[0].slice(0,4))*12+(+keys[0].slice(5,7))-1:target;
@@ -619,12 +621,14 @@ body{margin:0}
     // Dos resumenes: el mes anterior (ya cobrado, con el boton Pagado) y el mes actual (por cobrar)
     var pdt=new Date(y,m-1,1),py=pdt.getFullYear(),pm=pdt.getMonth(),pk=monthKey(py,pm);
     var pS=sums(data.entries.filter(function(e){return e.date.indexOf(pk)===0}));
-    function cuerpo(S,gcM,mkey,mes){
-      var ahHasta=sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mkey})).ah,ahPrev=ahHasta-S.ah,totalMes=S.in+S.ex+S.pr-S.out-S.ah+ahHasta;
+    function cuerpo(S,gcM,mkey,mes,adel){
+      var ahHasta=sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mkey})).ah,ahPrev=ahHasta-S.ah,neto=S.in+S.ex+S.pr-adel,totalMes=neto-S.out-S.ah+ahHasta;
       var h2='<h3>Salario</h3><div class="rows"><div class="row"><span>Entradas</span><b class="num in">'+money(S.in)+'</b></div>'+
         '<div class="row"><span>Horas extras '+(hd(S)?'<span class="note">('+hd(S)+')</span>':'')+'</span><b class="num ex">'+money(S.ex)+'</b></div>'+
         '<div class="row"><span>Propinas</span><b class="num tp">'+money(S.pr)+'</b></div>'+
-        '<div class="row sub2"><span>Subtotal: salario</span><b class="num">'+money(S.in+S.ex+S.pr)+'</b></div></div>';
+        '<div class="row sub2"><span>Subtotal: salario</span><b class="num">'+money(S.in+S.ex+S.pr)+'</b></div>'+
+        '<div class="row ad"><span>Adelantos <span class="note" style="color:inherit;opacity:.8">(se descuentan al pagar)</span></span><b class="num">'+money(adel)+'</b></div>'+
+        '<div class="row sub2"><span>Salario a cobrar</span><b class="num">'+money(neto)+'</b></div></div>';
       h2+='<h3>Gastos</h3><div class="rows">'+GCATS.filter(function(c){return c!=="Otros"||gcM[c]>0}).map(function(c){return '<div class="row"><span>'+c+'</span><b class="num out">'+money(gcM[c])+'</b></div>'}).join("")+
         '<div class="row sub2"><span>Subtotal de gastos</span><b class="num out">'+money(S.out)+'</b></div></div>';
       h2+='<h3>Ahorro</h3><div class="rows"><div class="row"><span>Ahorro de meses anteriores</span><b class="num sv">'+money(ahPrev)+'</b></div>'+
@@ -635,12 +639,12 @@ body{margin:0}
       return h2;
     }
     function gcDe(mkey){var o={};GCATS.forEach(function(c){o[c]=0});data.entries.forEach(function(e){if(e.type==="gasto"&&e.date.indexOf(mkey)===0)o[GCATS.indexOf(e.cat)>=0?e.cat:"Otros"]+=e.amount});return o}
-    $("tituloA").textContent="Resumen de "+MESES[pm];$("bodyA").innerHTML=cuerpo(pS,gcDe(pk),pk,MESES[pm]);
-    $("tituloB").textContent="Resumen de "+MESES[m];$("bodyB").innerHTML=cuerpo(ms,gcDe(mk),mk,MESES[m]);
+    $("tituloA").textContent="Resumen de "+MESES[pm];var adA=adelantosDe(py,pm),adB=adelantosDe(y,m);$("bodyA").innerHTML=cuerpo(pS,gcDe(pk),pk,MESES[pm],adA);
+    $("tituloB").textContent="Resumen de "+MESES[m];$("bodyB").innerHTML=cuerpo(ms,gcDe(mk),mk,MESES[m],adB);
     var cobradoA=!!(data.cierres&&data.cierres[pk]);
     $("chipA").className="chip2 "+(cobradoA?"ok":"warn");$("chipA").textContent=cobradoA?"Cobrado":"Sin marcar como pagado";
     $("notaA").textContent=cobradoA?"Esto ya lo cobraste.":"Cuando te paguen, pulsa Pagado.";
-    $("porCobrar").textContent=money(ms.in+ms.ex+ms.pr);$("notaB").textContent="Todavía no te pagan "+MESES[m]+". Se va armando con lo que anotes.";
+    $("porCobrar").textContent=money(ms.in+ms.ex+ms.pr-adB);$("notaB").textContent="Todavía no te pagan "+MESES[m]+". Se va armando con lo que anotes.";
     var cm=data.cierres&&data.cierres[pk];
     $("pagadoBtn").hidden=!!cm;
     $("pagadoEstado").innerHTML=cm?'<div class="okbox"><span>✓ '+MESES[pm].charAt(0).toUpperCase()+MESES[pm].slice(1)+' pagado</span><small class="num">Pagado el '+fdate(cm.fecha)+' · salario '+money(pS.in+pS.ex+pS.pr)+'.</small></div><button class="btn" type="button" id="reabrirBtn" style="margin-top:8px;width:100%">Reabrir '+MESES[pm]+'</button>':'';
@@ -878,7 +882,7 @@ body{margin:0}
     var list=data.entries.filter(function(e){return e.date.indexOf(mk)===0}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0});
     var sm=sums(list),ahHasta=sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah;
     var gcat={};GCATS.forEach(function(c){gcat[c]=0});list.forEach(function(e){if(e.type==="gasto")gcat[GCATS.indexOf(e.cat)>=0?e.cat:"Otros"]+=e.amount});
-    var ing=sm.in+sm.ex+sm.pr,total=ing-sm.out-sm.ah+ahHasta;
+    var ing=sm.in+sm.ex+sm.pr,adel=adelantosDe(y0,m0),total=ing-adel-sm.out-sm.ah+ahHasta;
     var DARK="0.04 0.055 0.07",INK="0.09 0.13 0.11",GREY="0.4 0.45 0.42",LINE="0.86 0.88 0.87",GREEN="0.05 0.48 0.36",RED="0.72 0.23 0.12",BLUE="0.18 0.36 0.77",TEAL="0.04 0.45 0.52",PURPLE="0.48 0.31 0.69";
     var pages=[],cur="",y=0;
     function nueva(){if(cur)pages.push(cur);cur="";y=800}
@@ -897,6 +901,8 @@ body{margin:0}
     fila("Horas extras",money(sm.ex),BLUE,false,hd(sm)?"("+hd(sm)+")":"");
     fila("Propinas",money(sm.pr),TEAL);
     fila("Subtotal: salario del mes",money(ing),INK,true);
+    fila("Adelantos (se descuentan al pagar)",money(adel),"0.77 0.12 0.23");
+    fila("Salario a cobrar",money(ing-adel),INK,true);
     titulo("Gastos");
     GCATS.filter(function(c){return c!=="Otros"||gcat[c]>0}).forEach(function(c){fila(c,money(gcat[c]),RED)});
     fila("Subtotal de gastos",money(sm.out),RED,true);
@@ -919,7 +925,7 @@ body{margin:0}
         TR("F3",9,(neg?"-":"")+money(e.amount),e.type==="gasto"?RED:e.type==="adelanto"?GREY:INK);
         R(40,y-5,515,.4,LINE);
       });
-      espacio(30);y-=20;T(40,"F1",8,"Los adelantos se muestran como referencia y no entran al total.",GREY);
+      espacio(30);y-=20;T(40,"F1",8,"Los adelantos se descuentan del salario a cobrar.",GREY);
     }
     pages.push(cur);
     var hoy=new Date(),fh=String(hoy.getDate()).padStart(2,"0")+"/"+String(hoy.getMonth()+1).padStart(2,"0")+"/"+hoy.getFullYear();
@@ -957,9 +963,9 @@ body{margin:0}
     l.forEach(function(e){t+=fdate(e.date)+"  "+NM[e.type]+(e.type==="extra"?(e.mode==="dia"?" (día corrido)":" "+e.hours+"h × "+money(e.rate||0)):"")+"  "+(e.type==="gasto"?"-":"")+money(e.amount)+(e.note?"  ("+e.note+")":"")+"\n"});
     var gcs={};GCATS.forEach(function(c){gcs[c]=0});l.forEach(function(e){if(e.type==="gasto"){gcs[GCATS.indexOf(e.cat)>=0?e.cat:"Otros"]+=e.amount}});
     t+="\n*Gastos por categoría*\n"+GCATS.filter(function(c){return gcs[c]>0}).map(function(c){return c+" ("+BILLETERA[c]+"): "+money(gcs[c])}).join("\n")+"\nSubtotal de gastos: "+money(s.out)+"\n";
-    t+="\n*Salario*\nEntradas: "+money(s.in)+"\nHoras extras: "+money(s.ex)+"\nPropinas: "+money(s.pr)+"\n*Subtotal salario: "+money(s.in+s.ex+s.pr)+"*\n";
+    t+="\n*Salario*\nEntradas: "+money(s.in)+"\nHoras extras: "+money(s.ex)+"\nPropinas: "+money(s.pr)+"\n*Subtotal salario: "+money(s.in+s.ex+s.pr)+"*\nAdelantos: "+money(adelantosDe(y,m))+"\n*Salario a cobrar: "+money(s.in+s.ex+s.pr-adelantosDe(y,m))+"*\n";
     t+="\n*Ahorro*\nAhorro del mes (Copec Pay): "+money(s.ah)+"\n*Subtotal gastos + ahorro: "+money(s.out+s.ah)+"*\n";
-    t+="\n*Total de "+MESES[m]+": "+money(s.in+s.ex+s.pr-s.out-s.ah+sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah)+"*";
+    t+="\n*Total de "+MESES[m]+": "+money(s.in+s.ex+s.pr-adelantosDe(y,m)-s.out-s.ah+sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah)+"*";
     copy(t,"Resumen copiado. Pégalo en WhatsApp.");
   });
   $("copyBackup").addEventListener("click",function(){
