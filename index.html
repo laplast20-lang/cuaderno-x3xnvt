@@ -245,13 +245,6 @@ body{margin:0}
 
   <!-- INICIO -->
   <main class="view" id="v-inicio">
-    <section class="adbox" aria-label="Adelantos">
-      <div class="adtop"><span class="adtag">Adelantos</span><span class="v num" id="adTot"></span></div>
-      <div class="pend" id="adList"></div>
-      <p class="adnote num" id="adNote"></p>
-      <button class="btn" type="button" id="addAdelanto">+ Anotar un adelanto</button>
-    </section>
-
 
 
     <section class="gbox" aria-label="Gastos del mes">
@@ -290,6 +283,13 @@ body{margin:0}
         <div class="row sum"><span>Subtotal de propinas <span class="note" id="pDet"></span></span><b class="num tp" id="pSub"></b></div>
       </div>
       <button class="btn" type="button" id="addPropina">+ Anotar una propina</button>
+    </section>
+
+    <section class="adbox" aria-label="Adelantos">
+      <div class="adtop"><span class="adtag">Adelantos</span><span class="v num" id="adTot"></span></div>
+      <div class="pend" id="adList"></div>
+      <p class="adnote num" id="adNote"></p>
+      <button class="btn" type="button" id="addAdelanto">+ Anotar un adelanto</button>
     </section>
 
     <section class="pagado" id="pagadoSec" aria-label="Pagado">
@@ -331,6 +331,10 @@ body{margin:0}
       <p class="nota-flujo">Salario del mes − gastos − ahorro del mes + ahorro acumulado en Copec Pay.</p>
     </section>
 
+    <button class="btn primary" type="button" id="pdfBtn2">Compartir PDF por WhatsApp</button>
+    <p class="hint pdfmsg" role="status" aria-live="polite"></p>
+    <a class="btn pdflink" hidden target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Abrir el PDF</a>
+
     <button class="btn primary" type="button" id="anotarHoy">+ Anotar algo de hoy</button>
   </main>
 
@@ -363,10 +367,12 @@ body{margin:0}
     <section class="box" aria-label="Compartir y copia de seguridad">
       <h2>Compartir y copia de seguridad</h2>
       <div class="btns">
-        <button class="btn primary" type="button" id="copyResumen">Copiar resumen del mes (WhatsApp)</button>
+        <button class="btn primary" type="button" id="pdfBtn">Compartir PDF del mes (WhatsApp)</button>
+        <button class="btn" type="button" id="copyResumen">Copiar resumen como texto</button>
         <button class="btn" type="button" id="copyBackup">Copiar copia de seguridad</button>
       </div>
-      <p class="hint" id="msg" role="status" aria-live="polite"></p>
+      <p class="hint pdfmsg" id="msg" role="status" aria-live="polite"></p>
+      <a class="btn pdflink" hidden target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Abrir el PDF</a>
       <label class="note" for="restoreTxt">Para restaurar, pega aquí tu copia de seguridad:</label>
       <textarea id="restoreTxt" placeholder="Pega aquí el texto de tu copia de seguridad"></textarea>
       <div class="btns">
@@ -375,7 +381,7 @@ body{margin:0}
           <input type="file" id="restoreFile" accept=".json,application/json,.txt" style="display:none">
         </label>
       </div>
-      <p class="note">En esta vista previa el PDF y la descarga de archivo están desactivados. En la versión instalada en tu celular, el botón genera un PDF del mes y lo abre para mandarlo por WhatsApp, y la copia de seguridad se baja como archivo.</p>
+      <p class="note">El PDF se abre en el menú de compartir de tu teléfono (WhatsApp, Mensajes, correo). Si tu navegador no lo permite, aparece el botón "Abrir el PDF" para verlo y compartirlo desde ahí.</p>
     </section>
   </main>
 </div>
@@ -764,6 +770,99 @@ body{margin:0}
     if(cz&&cz.ids)data.entries.forEach(function(e){if(cz.ids.indexOf(e.id)>=0&&e.saldadoEn===mk)delete e.saldadoEn});
     if(data.cierres)delete data.cierres[mk];save();render()});
   $("inicialInp").addEventListener("input",function(){data.pref=data.pref||{};data.pref.inicial=Math.max(0,Math.round(parseFloat($("inicialInp").value)||0));delete data.pref.inicialEjemplo;save();render()});
+
+  // ---------- PDF del mes (se arma aquí mismo, sin servicios externos)
+  function pdfEsc(t){return String(t).replace(/[–−—]/g,"-").replace(/[^\x20-\xFF]/g,"?").replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)")}
+  function pdfDoc(pages){
+    var parts=[],offs=[],len=0;
+    function add(x){parts.push(x);len+=x.length}
+    function obj(n,body){offs[n]=len;add(n+" 0 obj\n"+body+"\nendobj\n")}
+    add("%PDF-1.4\n");
+    var np=pages.length,kids=[];for(var i=0;i<np;i++)kids.push((7+2*i)+" 0 R");
+    obj(1,"<< /Type /Catalog /Pages 2 0 R >>");
+    obj(2,"<< /Type /Pages /Kids ["+kids.join(" ")+"] /Count "+np+" >>");
+    ["Helvetica","Helvetica-Bold","Courier","Courier-Bold"].forEach(function(f,k){obj(3+k,"<< /Type /Font /Subtype /Type1 /BaseFont /"+f+" /Encoding /WinAnsiEncoding >>")});
+    pages.forEach(function(c,i){
+      obj(7+2*i,"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Contents "+(8+2*i)+" 0 R >>");
+      obj(8+2*i,"<< /Length "+c.length+" >>\nstream\n"+c+"\nendstream");
+    });
+    var xref=len,n=7+2*np;add("xref\n0 "+n+"\n0000000000 65535 f \n");
+    for(var k=1;k<n;k++)add(String(offs[k]).padStart(10,"0")+" 00000 n \n");
+    add("trailer\n<< /Size "+n+" /Root 1 0 R >>\nstartxref\n"+xref+"\n%%EOF");
+    var str=parts.join(""),u=new Uint8Array(str.length);for(var j=0;j<str.length;j++)u[j]=str.charCodeAt(j)&255;return u;
+  }
+  function construirPDF(){
+    var y0=view.getFullYear(),m0=view.getMonth(),mk=monthKey(y0,m0);
+    var list=data.entries.filter(function(e){return e.date.indexOf(mk)===0}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0});
+    var sm=sums(list),ahHasta=sums(data.entries.filter(function(e){return e.date.slice(0,7)<=mk})).ah;
+    var gcat={};GCATS.forEach(function(c){gcat[c]=0});list.forEach(function(e){if(e.type==="gasto")gcat[GCATS.indexOf(e.cat)>=0?e.cat:"Otros"]+=e.amount});
+    var ing=sm.in+sm.ex+sm.pr,total=ing-sm.out-sm.ah+ahHasta;
+    var DARK="0.04 0.055 0.07",INK="0.09 0.13 0.11",GREY="0.4 0.45 0.42",LINE="0.86 0.88 0.87",GREEN="0.05 0.48 0.36",RED="0.72 0.23 0.12",BLUE="0.18 0.36 0.77",TEAL="0.04 0.45 0.52",PURPLE="0.48 0.31 0.69";
+    var pages=[],cur="",y=0;
+    function nueva(){if(cur)pages.push(cur);cur="";y=800}
+    function T(x,f,size,txt,col){cur+=col+" rg BT /"+f+" "+size+" Tf 1 0 0 1 "+x+" "+y+" Tm ("+pdfEsc(txt)+") Tj ET\n"}
+    function TR(f,size,txt,col){T(555-0.6*size*String(txt).length,f,size,txt,col)}
+    function R(x,yy,w,h,col){cur+=col+" rg "+x+" "+yy+" "+w+" "+h+" re f\n"}
+    function espacio(h){if(y<h+50){nueva();}}
+    function titulo(t){espacio(70);y-=26;T(40,"F2",11,t.toUpperCase(),GREY);y-=8}
+    function fila(label,monto,col,fuerte,nota){espacio(30);y-=18;T(40,fuerte?"F2":"F1",11,label,INK);if(nota)T(40+6.1*label.length+8,"F1",9,nota,GREY);TR(fuerte?"F4":"F3",11,monto,col);
+      if(fuerte)R(40,y+14,515,1.2,INK);R(40,y-7,515,.5,LINE);y-=2}
+    nueva();
+    R(0,770,595,72,DARK);y=812;T(40,"F2",20,"Resumen de "+MESES[m0]+" "+y0,"1 1 1");y=790;T(40,"F1",10,"Mi Cuaderno del Mes - pesos chilenos (CLP)","0.75 0.8 0.78");
+    y=752;
+    titulo("Salario");
+    fila("Entradas",money(sm.in),GREEN);
+    fila("Horas extras",money(sm.ex),BLUE,false,hd(sm)?"("+hd(sm)+")":"");
+    fila("Propinas",money(sm.pr),TEAL);
+    fila("Subtotal: salario del mes",money(ing),INK,true);
+    titulo("Gastos");
+    GCATS.filter(function(c){return c!=="Otros"||gcat[c]>0}).forEach(function(c){fila(c,money(gcat[c]),RED)});
+    fila("Subtotal de gastos",money(sm.out),RED,true);
+    titulo("Ahorro");
+    fila("Ahorro del mes (Copec Pay)",money(sm.ah),PURPLE);
+    fila("Subtotal: gastos + ahorro",money(sm.out+sm.ah),INK,true);
+    espacio(130);y-=34;R(40,y-52,515,70,DARK);y-=2;T(54,"F1",9,"TOTAL DE TODAS LAS CUENTAS","0.75 0.8 0.78");y-=30;T(54,"F2",24,money(total),"1 1 1");
+    y-=34;T(40,"F1",8,"Salario del mes - gastos - ahorro del mes + ahorro acumulado en Copec Pay.",GREY);
+    // movimientos
+    var NMP={gasto:"Gasto",entrada:"Entrada",extra:"Horas extras",propina:"Propina",adelanto:"Adelanto",ahorro:"Ahorro"};
+    if(list.length){
+      espacio(90);y-=18;titulo("Movimientos del mes");
+      list.forEach(function(e){
+        espacio(26);y-=16;
+        var det=e.type==="extra"?(e.mode==="dia"?"Día corrido":String(e.hours).replace(".",",")+" h x "+money(e.rate||0)):e.type==="gasto"?(e.cat||"")+(e.note?" - "+e.note:""):(e.note||"");
+        if(e.type==="extra"&&e.note&&e.mode!=="dia")det+=" - "+e.note;
+        det=det.slice(0,46);
+        T(40,"F1",9,fdate(e.date),GREY);T(80,"F2",9,NMP[e.type]||e.type,INK);T(170,"F1",9,det,INK);
+        var neg=e.type==="gasto"||(e.type==="ahorro"&&e.dir===-1);
+        TR("F3",9,(neg?"-":"")+money(e.amount),e.type==="gasto"?RED:e.type==="adelanto"?GREY:INK);
+        R(40,y-5,515,.4,LINE);
+      });
+      espacio(30);y-=20;T(40,"F1",8,"Los adelantos se muestran como referencia y no entran al total.",GREY);
+    }
+    pages.push(cur);
+    var hoy=new Date(),fh=String(hoy.getDate()).padStart(2,"0")+"/"+String(hoy.getMonth()+1).padStart(2,"0")+"/"+hoy.getFullYear();
+    pages=pages.map(function(c,i){return c+"0.5 0.55 0.52 rg BT /F1 8 Tf 1 0 0 1 40 24 Tm ("+pdfEsc("Generado el "+fh)+") Tj ET\n0.5 0.55 0.52 rg BT /F1 8 Tf 1 0 0 1 515 24 Tm ("+pdfEsc("Página "+(i+1)+" de "+pages.length)+") Tj ET\n"});
+    return {bytes:pdfDoc(pages),nombre:"Resumen-"+MESES[m0]+"-"+y0+".pdf"};
+  }
+  function pdfMsg(t){document.querySelectorAll(".pdfmsg").forEach(function(el){el.textContent=t})}
+  var pdfUrl=null;
+  function pdfLink(blob,nombre){
+    if(pdfUrl)URL.revokeObjectURL(pdfUrl);pdfUrl=URL.createObjectURL(blob);
+    document.querySelectorAll(".pdflink").forEach(function(a){a.href=pdfUrl;a.hidden=false;a.setAttribute("download",nombre)});
+  }
+  function compartirPDF(){
+    var r;try{r=construirPDF()}catch(e){pdfMsg("No pude armar el PDF. Intenta de nuevo.");return}
+    var blob=new Blob([r.bytes],{type:"application/pdf"}),file=null;
+    try{file=new File([blob],r.nombre,{type:"application/pdf"})}catch(e){}
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:r.nombre}).then(function(){pdfMsg("PDF listo. Elige WhatsApp para enviarlo.")},function(err){
+        if(err&&err.name==="AbortError"){pdfMsg("Cancelaste el envío. Cuando quieras, pulsa de nuevo.");return}
+        pdfLink(blob,r.nombre);pdfMsg('Tu teléfono no dejó abrir el menú de compartir. Pulsa "Abrir el PDF" y compártelo desde ahí.')});
+      return;
+    }
+    pdfLink(blob,r.nombre);pdfMsg('Pulsa "Abrir el PDF" y compártelo desde ahí por WhatsApp.');
+  }
+  $("pdfBtn").addEventListener("click",compartirPDF);$("pdfBtn2").addEventListener("click",compartirPDF);
   function say(t){$("msg").textContent=t}
   function fallbackBox(text){var t=$("restoreTxt");t.value=text;t.focus();t.select();say("Tu navegador no deja copiar solo. El texto quedó seleccionado en el cuadro: cópialo a mano.")}
   function copy(text,okMsg){
