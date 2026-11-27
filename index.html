@@ -282,8 +282,6 @@ body{margin:0}
     <button class="chip" id="notasBtn" type="button">✎ Notas</button>
   </header>
 
-  <button class="tcstrip num" type="button" id="tcStrip" aria-label="Tipos de cambio del Banco Central de Bolivia. Toca para actualizar"></button>
-
   <div class="example" id="exampleBar" hidden>
     <span>Estás viendo datos de ejemplo para que veas cómo queda. Nada de esto es tuyo.</span>
     <button type="button" id="clearEx">Borrar ejemplos</button>
@@ -402,6 +400,7 @@ body{margin:0}
 
   <!-- INVERSION -->
   <main class="view" id="v-inversion" hidden>
+    <button class="tcstrip num" type="button" id="tcStrip" aria-label="Tipos de cambio del Banco Central de Bolivia. Toca para actualizar"></button>
     <div class="fchips" id="invChips" role="group" aria-label="Carpetas de inversión"></div>
     <section class="invcard" aria-label="Carpeta">
       <h2 id="invTitulo">Inversión</h2>
@@ -1144,7 +1143,7 @@ body{margin:0}
     $("invTotal").innerHTML=ords.map(function(mo){return '<b>'+dinero(porMon[mo]||0,mo)+'</b>'}).join("");
     var ver=(data.invVer&&MONEDAS[data.invVer])?data.invVer:"BOB";$("invVer").value=ver;
     if(TC){var totBs=items.reduce(function(a,i){return a+tcABs(i.monto,i.moneda||c.moneda)},0);$("invEquiv").textContent="≈ "+dinero(tcDeBs(totBs,ver),ver);$("invEquiv").hidden=false;
-      $("tcInfo").textContent=(tcMsg?tcMsg+" ":"")+"Tipo de cambio oficial del Banco Central de Bolivia al "+TC.fecha.slice(8)+"/"+TC.fecha.slice(5,7)+"/"+TC.fecha.slice(0,4)+": $ 1 = Bs "+coma(TC.usd_bob,2)+" · CLP 1.000 = Bs "+coma(TC.clp_bob*1000,2)+". Se actualiza solo."}
+      $("tcInfo").textContent=(tcMsg?tcMsg+" ":"")+"Cálculo con el tipo de cambio oficial del Banco Central de Bolivia (arriba). Se actualiza solo."}
     else{$("invEquiv").hidden=true;$("tcInfo").textContent=tcMsg||"Todavía no hay tipo de cambio. Conéctate a internet y pulsa Actualizar."}
     $("invBorrarCarpeta").textContent=invConfirmCarp?"¿Seguro? Toca otra vez":"Borrar carpeta";
     $("invAviso").textContent=invConfirmCarp?"Se borra la carpeta con todos sus comprobantes y fotos. No se puede deshacer.":"";
