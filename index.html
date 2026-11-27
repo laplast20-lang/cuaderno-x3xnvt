@@ -132,6 +132,30 @@ button.gr:active{background:var(--bg)}
 .gent .t small{display:block;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gent .borrar{border:1px solid var(--out);color:var(--out);background:transparent;border-radius:999px;padding:9px 13px;font-weight:600;font-size:.82rem;white-space:nowrap}
 .gent.sel{border-color:var(--accent)}
+.fchips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;-webkit-overflow-scrolling:touch}
+.fchip{flex:none;border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:10px 16px;font-weight:600;font-size:.9rem;white-space:nowrap;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.fchip[aria-pressed="true"]{background:var(--in-bg);color:var(--in);border-color:var(--in)}
+.fchip.nueva{border-style:dashed;color:var(--soft)}
+.invcard{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.invcard h2{font-size:1.5rem;text-transform:uppercase;letter-spacing:.02em}
+.invtot{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.invtot b{font-family:var(--font-display);font-size:1.7rem;color:var(--in)}
+.invmini{display:flex;gap:8px;flex-wrap:wrap}
+.invmini button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 13px;font-size:.8rem;font-weight:600;color:var(--soft)}
+.invitem{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:12px;text-align:left;width:100%}
+.invitem .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.invitem .top b{font-family:var(--font-display);font-size:1.2rem;color:var(--in)}
+.invitem .mot{color:var(--ink)}
+.invitem small{color:var(--soft)}
+.fotos{display:flex;gap:8px;flex-wrap:wrap}
+.fthumb{position:relative;width:78px;height:78px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--bg);flex:none}
+.fthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.fthumb .qx{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:.8rem;line-height:1}
+.fadd{width:78px;height:78px;border-radius:10px;border:1.5px dashed var(--soft);background:transparent;color:var(--soft);font-size:.72rem;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:none;cursor:pointer;text-align:center}
+.fadd b{font-size:1.4rem;line-height:1}
+.visor{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:max(16px,env(safe-area-inset-top,0px)) 16px max(16px,env(safe-area-inset-bottom,0px))}
+.visor img{max-width:100%;max-height:78vh;border-radius:10px;object-fit:contain}
+.visor .btns{width:100%;max-width:420px}
 .nota-flujo{font-size:.8rem;color:var(--soft);margin:0}
 .adbox{background:var(--ad-bg);border:2px solid var(--ad);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .adtop{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -196,7 +220,7 @@ textarea{width:100%;min-height:70px;border:1px solid var(--line);background:var(
 /* barra de abajo */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:15;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);background:rgba(10,14,17,.82);border-top:1px solid var(--line);
   padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));display:flex;justify-content:center}
-.bar div{width:100%;max-width:560px;display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.bar div{width:100%;max-width:560px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
 .bar button{border:0;background:transparent;border-radius:12px;padding:8px 4px;font-size:.78rem;font-weight:600;color:var(--soft);display:flex;flex-direction:column;align-items:center;gap:2px}
 .bar button b{font-size:1.15rem;line-height:1}
 .bar button[aria-current="page"]{background:var(--in-bg);color:var(--in)}
@@ -362,6 +386,23 @@ body{margin:0}
     <p class="note">Toca un día para anotar un gasto, una entrada, horas extras, una propina o ahorro.</p>
   </main>
 
+  <!-- INVERSION -->
+  <main class="view" id="v-inversion" hidden>
+    <div class="fchips" id="invChips" role="group" aria-label="Carpetas de inversión"></div>
+    <section class="invcard" aria-label="Carpeta">
+      <h2 id="invTitulo">Inversión</h2>
+      <div class="invtot"><span class="note" id="invMoneda"></span><b class="num" id="invTotal"></b></div>
+      <button class="btn primary" type="button" id="invAgregar">+ Agregar comprobante</button>
+      <div class="invmini">
+        <button type="button" id="invRenombrar">Cambiar nombre</button>
+        <button type="button" id="invBorrarCarpeta">Borrar carpeta</button>
+      </div>
+      <p class="hint" id="invAviso"></p>
+    </section>
+    <div class="entries" id="invLista"></div>
+    <p class="note">Las fotos se guardan solo en este teléfono. Para tener otra copia, abre un comprobante y pulsa "Compartir foto".</p>
+  </main>
+
   <!-- RESPALDO -->
   <main class="view" id="v-respaldo" hidden>
     <section class="box" aria-label="Efectivo inicial">
@@ -402,6 +443,7 @@ body{margin:0}
 <nav class="bar" aria-label="Secciones"><div>
   <button type="button" data-view="inicio"><b>⌂</b>Inicio</button>
   <button type="button" data-view="calendario"><b>▦</b>Calendario</button>
+  <button type="button" data-view="inversion"><b>◈</b>Inversión</button>
   <button type="button" data-view="respaldo"><b>⇩</b>Respaldo</button>
 </div></nav>
 
@@ -473,6 +515,54 @@ body{margin:0}
       <button class="btn full" type="button" id="gDel" hidden style="border-color:var(--out);color:var(--out)">Borrar este gasto</button>
     </form>
     <div class="entries" id="gEntries"></div>
+  </div>
+</div>
+
+<div class="scrim" id="scrimInv" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="invSheetTitulo">
+    <header>
+      <h2 id="invSheetTitulo" style="text-transform:none">Comprobante</h2>
+      <button class="x" type="button" id="closeInv" aria-label="Cerrar">✕</button>
+    </header>
+    <form class="form" id="invForm" autocomplete="off">
+      <div class="full">
+        <span class="note">Fotos del comprobante de pago</span>
+        <div class="fotos" id="invFotos" style="margin-top:6px"></div>
+        <input id="invArchivo" type="file" accept="image/*" multiple style="display:none">
+      </div>
+      <label for="invMonto"><span id="invMontoL">Monto</span><input id="invMonto" type="text" inputmode="decimal" placeholder="0" required></label>
+      <label for="invFecha"><span>Fecha</span><input id="invFecha" type="date" required></label>
+      <label class="full" for="invMotivo"><span>Motivo</span><input id="invMotivo" type="text" maxlength="120" placeholder="Ej.: pago de la primera cuota"></label>
+      <div class="full tools">
+        <button class="btn primary" style="flex:1" type="submit" id="invGuardar">Guardar</button>
+      </div>
+      <button class="btn full" type="button" id="invBorrarItem" hidden style="border-color:var(--out);color:var(--out)">Borrar este comprobante</button>
+    </form>
+    <p class="hint" id="invMsg" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<div class="scrim" id="scrimCarp" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="carpTitulo">
+    <header>
+      <h2 id="carpTitulo" style="text-transform:none">Nueva carpeta</h2>
+      <button class="x" type="button" id="closeCarp" aria-label="Cerrar">✕</button>
+    </header>
+    <form class="form" id="carpForm" autocomplete="off">
+      <label class="full" for="carpNombre"><span>Nombre de la carpeta</span><input id="carpNombre" type="text" maxlength="40" placeholder="Ej.: Inversión Bolivia" required></label>
+      <label class="full" id="carpMonedaL" for="carpMoneda"><span>Moneda de esta carpeta</span>
+        <select id="carpMoneda"><option value="BOB">Bolivianos (Bs)</option><option value="CLP">Pesos chilenos ($)</option><option value="USD">Dólares (US$)</option></select>
+      </label>
+      <div class="full tools"><button class="btn primary" style="flex:1" type="submit" id="carpGuardar">Crear carpeta</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="visor" id="visor" hidden>
+  <img id="visorImg" alt="Comprobante">
+  <div class="btns">
+    <button class="btn primary" type="button" id="visorCompartir">Compartir foto</button>
+    <button class="btn" type="button" id="visorCerrar">Cerrar</button>
   </div>
 </div>
 
@@ -667,9 +757,9 @@ body{margin:0}
 
   function show(v){
     vista=v;
-    ["inicio","calendario","respaldo"].forEach(function(n){$("v-"+n).hidden=n!==v});
+    ["inicio","calendario","inversion","respaldo"].forEach(function(n){$("v-"+n).hidden=n!==v});
     document.querySelectorAll(".bar button").forEach(function(b){if(b.dataset.view===v)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
-    $("monthbar").hidden=v==="respaldo";
+    $("monthbar").hidden=v==="respaldo"||v==="inversion";if(v==="inversion")invRender();
     try{history.replaceState(null,"","#"+v)}catch(e){}
   }
 
@@ -782,7 +872,7 @@ body{margin:0}
     else{$("notasTxt").select();$("notasEstado").textContent="Selecciona y copia a mano."}});
   $("closeSheet").addEventListener("click",closeDay);
   $("scrim").addEventListener("click",function(ev){if(ev.target===$("scrim"))closeDay()});
-  document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){if(!$("scrimNotas").hidden)cerrarNotas();else if(!$("scrimG").hidden)gCerrar();else if(!$("scrim").hidden)closeDay()}});
+  document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){if(!$("visor").hidden)$("visor").hidden=true;else if(!$("scrimCarp").hidden)$("scrimCarp").hidden=true;else if(!$("scrimInv").hidden)invCerrarHoja(true);else if(!$("scrimNotas").hidden)cerrarNotas();else if(!$("scrimG").hidden)gCerrar();else if(!$("scrim").hidden)closeDay()}});
   (function(){var sm=$("selMes"),sa=$("selAnio");
     MESES.forEach(function(n,i){var o=document.createElement("option");o.value=i;o.textContent=n.charAt(0).toUpperCase()+n.slice(1);sm.appendChild(o)});
     for(var a=2024;a<=2036;a++){var o=document.createElement("option");o.value=a;o.textContent=a;sa.appendChild(o)}})();
@@ -951,6 +1041,131 @@ body{margin:0}
     pdfLink(blob,r.nombre);pdfMsg('Pulsa "Abrir el PDF" y compártelo desde ahí por WhatsApp.');
   }
   $("pdfBtn").addEventListener("click",compartirPDF);$("pdfBtn2").addEventListener("click",compartirPDF);
+
+  // ---------- Inversión: carpetas con comprobantes (foto + monto + fecha + motivo)
+  var MONEDAS={CLP:{s:"$",d:0},BOB:{s:"Bs",d:2},USD:{s:"US$",d:2}};
+  var NOMBRE_MON={CLP:"Pesos chilenos",BOB:"Bolivianos",USD:"Dólares"};
+  var invSel=null,invEdit=null,invNuevas=[],invTmp=[],invQuitadas=[],invCarpEdit=null,invConfirmItem=null,invConfirmCarp=false,visorFoto=null,fotoUrls={};
+  function invData(){
+    if(!data.inv||!Array.isArray(data.inv.carpetas)||!Array.isArray(data.inv.items))data.inv={carpetas:[],items:[]};
+    if(!data.inv.carpetas.length){data.inv.carpetas.push({id:uid(),nombre:"Inversión Bolivia",moneda:"BOB"});save()}
+    if(!invSel||!data.inv.carpetas.some(function(c){return c.id===invSel}))invSel=data.inv.carpetas[0].id;
+    return data.inv;
+  }
+  function dinero(n,mon){
+    var c=MONEDAS[mon]||MONEDAS.CLP,neg=n<0,a=Math.abs(n),ent=Math.floor(a),dec=Math.round((a-ent)*100);
+    if(dec===100){ent++;dec=0}
+    var t=String(ent).replace(/\B(?=(\d{3})+(?!\d))/g,".");
+    if(c.d&&dec)t+=","+String(dec).padStart(2,"0");
+    return (neg?"-":"")+c.s+" "+t;
+  }
+  // fotos: se guardan en el navegador (IndexedDB), no en el texto de la app
+  var dbP=null;
+  function idb(){
+    if(dbP)return dbP;
+    dbP=new Promise(function(res,rej){try{var r=indexedDB.open("cuaderno-fotos",1);r.onupgradeneeded=function(){r.result.createObjectStore("f")};r.onsuccess=function(){var db=r.result;db.onclose=function(){dbP=null};db.onversionchange=function(){db.close();dbP=null};res(db)};r.onerror=function(){dbP=null;rej(r.error)};r.onblocked=function(){dbP=null}}catch(e){dbP=null;rej(e)}});
+    return dbP;
+  }
+  function fotoPut(id,blob){return idb().then(function(db){return new Promise(function(res,rej){var t=db.transaction("f","readwrite");t.objectStore("f").put(blob,id);t.oncomplete=function(){res()};t.onerror=function(){rej(t.error)}})})}
+  function fotoGet(id){return idb().then(function(db){return new Promise(function(res,rej){var q=db.transaction("f","readonly").objectStore("f").get(id);q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})})}
+  function fotoDel(id){return idb().then(function(db){return new Promise(function(res){var t=db.transaction("f","readwrite");t.objectStore("f").delete(id);t.oncomplete=function(){res()};t.onerror=function(){res()}})}).catch(function(){})}
+  function fotoUrl(id){if(fotoUrls[id])return Promise.resolve(fotoUrls[id]);return fotoGet(id).then(function(b){if(!b)return "";fotoUrls[id]=URL.createObjectURL(b);return fotoUrls[id]})}
+  function cargarImgs(root){root.querySelectorAll("img[data-foto]").forEach(function(im){fotoUrl(im.dataset.foto).then(function(u){if(u)im.src=u},function(){})})}
+  function comprimir(file){
+    return new Promise(function(res,rej){
+      var u=URL.createObjectURL(file),im=new Image();
+      im.onload=function(){
+        var max=1400,w=im.naturalWidth,h=im.naturalHeight,k=Math.min(1,max/Math.max(w,h)),cv=document.createElement("canvas");
+        cv.width=Math.round(w*k);cv.height=Math.round(h*k);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(u);
+        cv.toBlob(function(b){b?res(b):rej(new Error("sin imagen"))},"image/jpeg",0.74);
+      };
+      im.onerror=function(){URL.revokeObjectURL(u);rej(new Error("no se pudo leer la foto"))};
+      im.src=u;
+    });
+  }
+  function invCarpeta(){var d=invData();return d.carpetas.find(function(c){return c.id===invSel})}
+  function invRender(){
+    var d=invData(),c=invCarpeta();
+    $("invChips").innerHTML=d.carpetas.map(function(k){return '<button type="button" class="fchip" data-carp="'+k.id+'" aria-pressed="'+(k.id===invSel)+'">'+esc(k.nombre)+'</button>'}).join("")+'<button type="button" class="fchip nueva" id="invNuevaCarp">+ Nueva carpeta</button>';
+    var items=d.items.filter(function(i){return i.carpeta===c.id}).sort(function(a,b){return a.fecha<b.fecha?1:a.fecha>b.fecha?-1:0});
+    var tot=items.reduce(function(a,i){return a+i.monto},0);
+    $("invTitulo").textContent=c.nombre;$("invMoneda").textContent=(NOMBRE_MON[c.moneda]||"")+" · "+items.length+(items.length===1?" comprobante":" comprobantes");
+    $("invTotal").textContent=dinero(tot,c.moneda);
+    $("invBorrarCarpeta").textContent=invConfirmCarp?"¿Seguro? Toca otra vez":"Borrar carpeta";
+    $("invAviso").textContent=invConfirmCarp?"Se borra la carpeta con todos sus comprobantes y fotos. No se puede deshacer.":"";
+    $("invLista").innerHTML=items.length?items.map(function(i){
+      return '<button type="button" class="invitem" data-item="'+i.id+'"><span class="top"><b class="num">'+dinero(i.monto,c.moneda)+'</b><small>'+fdate(i.fecha)+' '+i.fecha.slice(0,4)+'</small></span>'+
+        (i.motivo?'<span class="mot">'+esc(i.motivo)+'</span>':'')+
+        ((i.fotos&&i.fotos.length)?'<span class="fotos">'+i.fotos.map(function(f){return '<span class="fthumb"><img data-foto="'+f+'" alt="Comprobante"></span>'}).join("")+'</span>':'<small>Sin foto</small>')+
+        '<small>Toca para ver o cambiar</small></button>'}).join(""):'<p class="hint">Todavía no hay comprobantes en esta carpeta. Pulsa "+ Agregar comprobante" y sube la foto del pago con su monto, fecha y motivo.</p>';
+    cargarImgs($("invLista"));
+  }
+  function invFotosRender(){
+    $("invFotos").innerHTML=invTmp.map(function(f){return '<span class="fthumb"><img data-foto="'+f+'" alt="Comprobante"><button type="button" class="qx" data-quitar="'+f+'" aria-label="Quitar foto">✕</button></span>'}).join("")+
+      '<button type="button" class="fadd" id="invMasFotos"><b>+</b>Foto</button>';
+    cargarImgs($("invFotos"));
+  }
+  function invAbrir(item){
+    var c=invCarpeta();invEdit=item?item.id:null;invNuevas=[];invQuitadas=[];invTmp=item?(item.fotos||[]).slice():[];
+    $("invSheetTitulo").textContent=(item?"Comprobante":"Nuevo comprobante")+" · "+c.nombre;
+    $("invMontoL").textContent="Monto ("+MONEDAS[c.moneda].s+")";
+    $("invMonto").value=item?String(item.monto).replace(".",","):"";
+    var t=new Date();$("invFecha").value=item?item.fecha:iso(t.getFullYear(),t.getMonth(),t.getDate());
+    $("invMotivo").value=item?(item.motivo||""):"";
+    $("invGuardar").textContent=item?"Guardar cambios":"Guardar comprobante";$("invBorrarItem").hidden=!item;invConfirmItem=null;$("invBorrarItem").textContent="Borrar este comprobante";$("invMsg").textContent="";
+    invFotosRender();$("scrimInv").hidden=false;
+  }
+  function invCerrarHoja(descartar){
+    if(descartar)invNuevas.forEach(function(f){fotoDel(f)});
+    $("scrimInv").hidden=true;invEdit=null;invNuevas=[];invTmp=[];invQuitadas=[];invRender();
+  }
+  $("invChips").addEventListener("click",function(ev){
+    if(ev.target.closest("#invNuevaCarp")){invCarpEdit=null;$("carpTitulo").textContent="Nueva carpeta";$("carpNombre").value="";$("carpMoneda").value="BOB";$("carpMonedaL").hidden=false;$("carpGuardar").textContent="Crear carpeta";$("scrimCarp").hidden=false;setTimeout(function(){$("carpNombre").focus()},60);return}
+    var b=ev.target.closest("[data-carp]");if(b){invSel=b.dataset.carp;invConfirmCarp=false;invRender()}});
+  $("invRenombrar").addEventListener("click",function(){var c=invCarpeta();invCarpEdit=c.id;$("carpTitulo").textContent="Cambiar nombre";$("carpNombre").value=c.nombre;$("carpMonedaL").hidden=true;$("carpGuardar").textContent="Guardar nombre";$("scrimCarp").hidden=false;setTimeout(function(){$("carpNombre").focus()},60)});
+  $("closeCarp").addEventListener("click",function(){$("scrimCarp").hidden=true});
+  $("scrimCarp").addEventListener("click",function(ev){if(ev.target===$("scrimCarp"))$("scrimCarp").hidden=true});
+  $("carpForm").addEventListener("submit",function(ev){
+    ev.preventDefault();var n=$("carpNombre").value.trim();if(!n)return;var d=invData();
+    if(invCarpEdit){var c=d.carpetas.find(function(x){return x.id===invCarpEdit});if(c)c.nombre=n}
+    else{var nc={id:uid(),nombre:n,moneda:$("carpMoneda").value};d.carpetas.push(nc);invSel=nc.id}
+    save();$("scrimCarp").hidden=true;invConfirmCarp=false;invRender()});
+  $("invBorrarCarpeta").addEventListener("click",function(){
+    if(!invConfirmCarp){invConfirmCarp=true;invRender();return}
+    var d=invData(),id=invSel;d.items.filter(function(i){return i.carpeta===id}).forEach(function(i){(i.fotos||[]).forEach(function(f){fotoDel(f)})});
+    d.items=d.items.filter(function(i){return i.carpeta!==id});d.carpetas=d.carpetas.filter(function(c){return c.id!==id});invSel=null;invConfirmCarp=false;save();invRender()});
+  $("invAgregar").addEventListener("click",function(){invAbrir(null)});
+  $("invLista").addEventListener("click",function(ev){var b=ev.target.closest("[data-item]");if(!b)return;var it=invData().items.find(function(i){return i.id===b.dataset.item});if(it)invAbrir(it)});
+  $("closeInv").addEventListener("click",function(){invCerrarHoja(true)});
+  $("scrimInv").addEventListener("click",function(ev){if(ev.target===$("scrimInv"))invCerrarHoja(true)});
+  $("invFotos").addEventListener("click",function(ev){
+    if(ev.target.closest("#invMasFotos")){$("invArchivo").click();return}
+    var q=ev.target.closest("[data-quitar]");if(q){var id=q.dataset.quitar;invTmp=invTmp.filter(function(f){return f!==id});if(invNuevas.indexOf(id)>=0){invNuevas=invNuevas.filter(function(f){return f!==id});fotoDel(id)}else invQuitadas.push(id);invFotosRender();return}
+    var im=ev.target.closest("img[data-foto]");if(im)abrirVisor(im.dataset.foto)});
+  $("invLista").addEventListener("click",function(ev){/* las fotos de la lista abren el comprobante completo */});
+  $("invArchivo").addEventListener("change",function(){
+    var files=Array.prototype.slice.call($("invArchivo").files||[]);$("invArchivo").value="";if(!files.length)return;
+    $("invMsg").textContent="Guardando foto…";
+    files.reduce(function(p,f){return p.then(function(){return comprimir(f).then(function(b){var id="f"+uid();return fotoPut(id,b).then(function(){invTmp.push(id);invNuevas.push(id)})})})},Promise.resolve())
+      .then(function(){$("invMsg").textContent="";invFotosRender()},function(){$("invMsg").textContent="No pude guardar la foto en este teléfono. Puedes guardar el comprobante sin foto.";invFotosRender()});
+  });
+  $("invForm").addEventListener("submit",function(ev){
+    ev.preventDefault();var monto=parseFloat(String($("invMonto").value).replace(/\./g,"").replace(",","."));
+    if(!(monto>=0)){$("invMsg").textContent="Escribe el monto con números.";return}
+    var d=invData(),rec={carpeta:invSel,monto:Math.round(monto*100)/100,fecha:$("invFecha").value,motivo:$("invMotivo").value.trim(),fotos:invTmp.slice()};
+    if(invEdit){var it=d.items.find(function(i){return i.id===invEdit});if(it)Object.assign(it,rec)}else{rec.id=uid();d.items.push(rec)}
+    invQuitadas.forEach(function(f){fotoDel(f)});invNuevas=[];invQuitadas=[];save();invCerrarHoja(false)});
+  $("invBorrarItem").addEventListener("click",function(){
+    if(!invEdit)return;if(invConfirmItem!==invEdit){invConfirmItem=invEdit;$("invBorrarItem").textContent="¿Seguro? Toca otra vez para borrar";return}
+    var d=invData(),it=d.items.find(function(i){return i.id===invEdit});if(it)(it.fotos||[]).forEach(function(f){fotoDel(f)});
+    d.items=d.items.filter(function(i){return i.id!==invEdit});invNuevas.forEach(function(f){fotoDel(f)});save();invCerrarHoja(false)});
+  function abrirVisor(id){visorFoto=id;fotoUrl(id).then(function(u){if(!u)return;$("visorImg").src=u;$("visor").hidden=false})}
+  $("visorCerrar").addEventListener("click",function(){$("visor").hidden=true});
+  $("visor").addEventListener("click",function(ev){if(ev.target===$("visor")||ev.target===$("visorImg"))$("visor").hidden=true});
+  $("visorCompartir").addEventListener("click",function(){
+    if(!visorFoto)return;fotoGet(visorFoto).then(function(b){if(!b)return;var f=new File([b],"comprobante.jpg",{type:"image/jpeg"});
+      if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],title:"Comprobante"}).catch(function(){});
+      else{var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="comprobante.jpg";document.body.appendChild(a);a.click();a.remove()}})});
   function say(t){$("msg").textContent=t}
   function fallbackBox(text){var t=$("restoreTxt");t.value=text;t.focus();t.select();say("Tu navegador no deja copiar solo. El texto quedó seleccionado en el cuadro: cópialo a mano.")}
   function copy(text,okMsg){
@@ -969,14 +1184,14 @@ body{margin:0}
     copy(t,"Resumen copiado. Pégalo en WhatsApp.");
   });
   $("copyBackup").addEventListener("click",function(){
-    var clean={app:"mi-cuaderno",version:2,exportado:new Date().toISOString(),notas:data.notas||"",cierres:Object.keys(data.cierres||{}).filter(function(k){return !data.cierres[k].example}).reduce(function(o,k){o[k]=data.cierres[k];return o},{}),pref:{inicial:(data.pref&&!data.pref.inicialEjemplo&&data.pref.inicial)||0,rate:(data.pref&&data.pref.rate)||0,dia:(data.pref&&data.pref.dia)||0},entries:data.entries.filter(function(e){return !e.example})};
+    var clean={app:"mi-cuaderno",version:2,exportado:new Date().toISOString(),notas:data.notas||"",inv:data.inv||{carpetas:[],items:[]},cierres:Object.keys(data.cierres||{}).filter(function(k){return !data.cierres[k].example}).reduce(function(o,k){o[k]=data.cierres[k];return o},{}),pref:{inicial:(data.pref&&!data.pref.inicialEjemplo&&data.pref.inicial)||0,rate:(data.pref&&data.pref.rate)||0,dia:(data.pref&&data.pref.dia)||0},entries:data.entries.filter(function(e){return !e.example})};
     copy(JSON.stringify(clean),"Copia de seguridad copiada. Guárdala en un lugar seguro (por ejemplo, mándatela por WhatsApp).");
   });
   var TIPOS=["gasto","entrada","extra","propina","adelanto","ahorro"];
   function restore(text){
     try{var o=JSON.parse(text);if(!o||!Array.isArray(o.entries))throw 0;
       var ok=o.entries.filter(function(e){return e&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)&&TIPOS.indexOf(e.type)>=0&&isFinite(e.amount)}).map(function(e){e.id=e.id||uid();e.dir=e.dir||1;delete e.example;return e});
-      data={entries:ok,notas:typeof o.notas==="string"?o.notas:"",pref:o.pref&&typeof o.pref==="object"?o.pref:(data.pref||{}),cierres:o.cierres&&typeof o.cierres==="object"?o.cierres:{}};$("inicialInp").value=(data.pref&&data.pref.inicial)||"";save();render();say("Listo: se restauraron "+ok.length+" anotaciones"+(o.notas?" y tus notas.":"."))
+      data={entries:ok,notas:typeof o.notas==="string"?o.notas:"",pref:o.pref&&typeof o.pref==="object"?o.pref:(data.pref||{}),cierres:o.cierres&&typeof o.cierres==="object"?o.cierres:{},inv:o.inv&&Array.isArray(o.inv.carpetas)&&Array.isArray(o.inv.items)?o.inv:(data.inv||{carpetas:[],items:[]})};$("inicialInp").value=(data.pref&&data.pref.inicial)||"";save();render();say("Listo: se restauraron "+ok.length+" anotaciones"+(o.notas?" y tus notas.":"."))
     }catch(e){say("No pude leer ese texto. Revisa que sea una copia de seguridad completa.")}
   }
   $("restoreBtn").addEventListener("click",function(){var v=$("restoreTxt").value.trim();if(!v){say("Primero pega el texto de tu copia de seguridad.");return}restore(v)});
@@ -986,8 +1201,8 @@ body{margin:0}
   document.body.classList.add("splash");
   $("entrar").addEventListener("click",function(){var pt=$("portada");pt.classList.add("fuera");document.body.classList.remove("splash");setTimeout(function(){pt.hidden=true},500);window.scrollTo(0,0)});
   load();$("inicialInp").value=(data.pref&&data.pref.inicial)||"";render();
-  var h=(location.hash||"").replace("#","");show(["inicio","calendario","respaldo"].indexOf(h)>=0?h:"inicio");
-  window.addEventListener("hashchange",function(){var h=(location.hash||"").replace("#","");if(["inicio","calendario","respaldo"].indexOf(h)>=0&&h!==vista)show(h)});
+  var h=(location.hash||"").replace("#","");show(["inicio","calendario","inversion","respaldo"].indexOf(h)>=0?h:"inicio");
+  window.addEventListener("hashchange",function(){var h=(location.hash||"").replace("#","");if(["inicio","calendario","inversion","respaldo"].indexOf(h)>=0&&h!==vista)show(h)});
 })();
 </script>
 </body>
