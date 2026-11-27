@@ -139,7 +139,9 @@ button.gr:active{background:var(--bg)}
 .invcard{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
 .invcard h2{font-size:1.5rem;text-transform:uppercase;letter-spacing:.02em}
 .invtot{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
-.invtot b{font-family:var(--font-display);font-size:1.7rem;color:var(--in)}
+.invtot{flex-direction:column;align-items:flex-start;gap:2px}
+.invtot .tots{display:flex;flex-direction:column;align-items:flex-start;gap:0}
+.invtot .tots b{font-family:var(--font-display);font-size:1.6rem;color:var(--in);line-height:1.2}
 .invmini{display:flex;gap:8px;flex-wrap:wrap}
 .invmini button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 13px;font-size:.8rem;font-weight:600;color:var(--soft)}
 .invitem{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:12px;text-align:left;width:100%}
@@ -391,7 +393,7 @@ body{margin:0}
     <div class="fchips" id="invChips" role="group" aria-label="Carpetas de inversión"></div>
     <section class="invcard" aria-label="Carpeta">
       <h2 id="invTitulo">Inversión</h2>
-      <div class="invtot"><span class="note" id="invMoneda"></span><b class="num" id="invTotal"></b></div>
+      <div class="invtot"><span class="note" id="invMoneda"></span><div class="tots num" id="invTotal"></div></div>
       <button class="btn primary" type="button" id="invAgregar">+ Agregar comprobante</button>
       <div class="invmini">
         <button type="button" id="invRenombrar">Cambiar nombre</button>
@@ -530,6 +532,9 @@ body{margin:0}
         <div class="fotos" id="invFotos" style="margin-top:6px"></div>
         <input id="invArchivo" type="file" accept="image/*" multiple style="display:none">
       </div>
+      <label class="full" for="invMon"><span>Moneda de este pago</span>
+        <select id="invMon"><option value="BOB">Bs (Bolivianos)</option><option value="CLP">CLP (Pesos chilenos)</option><option value="USD">$ (Dólares)</option></select>
+      </label>
       <label for="invMonto"><span id="invMontoL">Monto</span><input id="invMonto" type="text" inputmode="decimal" placeholder="0" required></label>
       <label for="invFecha"><span>Fecha</span><input id="invFecha" type="date" required></label>
       <label class="full" for="invMotivo"><span>Motivo</span><input id="invMotivo" type="text" maxlength="120" placeholder="Ej.: pago de la primera cuota"></label>
@@ -550,8 +555,8 @@ body{margin:0}
     </header>
     <form class="form" id="carpForm" autocomplete="off">
       <label class="full" for="carpNombre"><span>Nombre de la carpeta</span><input id="carpNombre" type="text" maxlength="40" placeholder="Ej.: Inversión Bolivia" required></label>
-      <label class="full" id="carpMonedaL" for="carpMoneda"><span>Moneda de esta carpeta</span>
-        <select id="carpMoneda"><option value="BOB">Bolivianos (Bs)</option><option value="CLP">Pesos chilenos ($)</option><option value="USD">Dólares (US$)</option></select>
+      <label class="full" id="carpMonedaL" for="carpMoneda"><span>Moneda principal de la carpeta (cada pago puede cambiarla)</span>
+        <select id="carpMoneda"><option value="BOB">Bs (Bolivianos)</option><option value="CLP">CLP (Pesos chilenos)</option><option value="USD">$ (Dólares)</option></select>
       </label>
       <div class="full tools"><button class="btn primary" style="flex:1" type="submit" id="carpGuardar">Crear carpeta</button></div>
     </form>
@@ -1043,7 +1048,7 @@ body{margin:0}
   $("pdfBtn").addEventListener("click",compartirPDF);$("pdfBtn2").addEventListener("click",compartirPDF);
 
   // ---------- Inversión: carpetas con comprobantes (foto + monto + fecha + motivo)
-  var MONEDAS={CLP:{s:"$",d:0},BOB:{s:"Bs",d:2},USD:{s:"US$",d:2}};
+  var MONEDAS={CLP:{s:"CLP",d:0},BOB:{s:"Bs",d:2},USD:{s:"$",d:2}};
   var NOMBRE_MON={CLP:"Pesos chilenos",BOB:"Bolivianos",USD:"Dólares"};
   var invSel=null,invEdit=null,invNuevas=[],invTmp=[],invQuitadas=[],invCarpEdit=null,invConfirmItem=null,invConfirmCarp=false,visorFoto=null,fotoUrls={};
   function invData(){
@@ -1088,13 +1093,14 @@ body{margin:0}
     var d=invData(),c=invCarpeta();
     $("invChips").innerHTML=d.carpetas.map(function(k){return '<button type="button" class="fchip" data-carp="'+k.id+'" aria-pressed="'+(k.id===invSel)+'">'+esc(k.nombre)+'</button>'}).join("")+'<button type="button" class="fchip nueva" id="invNuevaCarp">+ Nueva carpeta</button>';
     var items=d.items.filter(function(i){return i.carpeta===c.id}).sort(function(a,b){return a.fecha<b.fecha?1:a.fecha>b.fecha?-1:0});
-    var tot=items.reduce(function(a,i){return a+i.monto},0);
-    $("invTitulo").textContent=c.nombre;$("invMoneda").textContent=(NOMBRE_MON[c.moneda]||"")+" · "+items.length+(items.length===1?" comprobante":" comprobantes");
-    $("invTotal").textContent=dinero(tot,c.moneda);
+    var porMon={};items.forEach(function(i){var mo=i.moneda||c.moneda;porMon[mo]=(porMon[mo]||0)+i.monto});
+    var ords=["BOB","CLP","USD"].filter(function(mo){return porMon[mo]!==undefined});if(!ords.length)ords=[c.moneda];
+    $("invTitulo").textContent=c.nombre;$("invMoneda").textContent=items.length+(items.length===1?" comprobante":" comprobantes")+(ords.length>1?" · una suma por moneda":"");
+    $("invTotal").innerHTML=ords.map(function(mo){return '<b>'+dinero(porMon[mo]||0,mo)+'</b>'}).join("");
     $("invBorrarCarpeta").textContent=invConfirmCarp?"¿Seguro? Toca otra vez":"Borrar carpeta";
     $("invAviso").textContent=invConfirmCarp?"Se borra la carpeta con todos sus comprobantes y fotos. No se puede deshacer.":"";
     $("invLista").innerHTML=items.length?items.map(function(i){
-      return '<button type="button" class="invitem" data-item="'+i.id+'"><span class="top"><b class="num">'+dinero(i.monto,c.moneda)+'</b><small>'+fdate(i.fecha)+' '+i.fecha.slice(0,4)+'</small></span>'+
+      return '<button type="button" class="invitem" data-item="'+i.id+'"><span class="top"><b class="num">'+dinero(i.monto,i.moneda||c.moneda)+'</b><small>'+fdate(i.fecha)+' '+i.fecha.slice(0,4)+'</small></span>'+
         (i.motivo?'<span class="mot">'+esc(i.motivo)+'</span>':'')+
         ((i.fotos&&i.fotos.length)?'<span class="fotos">'+i.fotos.map(function(f){return '<span class="fthumb"><img data-foto="'+f+'" alt="Comprobante"></span>'}).join("")+'</span>':'<small>Sin foto</small>')+
         '<small>Toca para ver o cambiar</small></button>'}).join(""):'<p class="hint">Todavía no hay comprobantes en esta carpeta. Pulsa "+ Agregar comprobante" y sube la foto del pago con su monto, fecha y motivo.</p>';
@@ -1105,10 +1111,12 @@ body{margin:0}
       '<button type="button" class="fadd" id="invMasFotos"><b>+</b>Foto</button>';
     cargarImgs($("invFotos"));
   }
+  function invMontoEtiqueta(){$("invMontoL").textContent="Monto ("+MONEDAS[$("invMon").value].s+")"}
+  $("invMon").addEventListener("change",invMontoEtiqueta);
   function invAbrir(item){
     var c=invCarpeta();invEdit=item?item.id:null;invNuevas=[];invQuitadas=[];invTmp=item?(item.fotos||[]).slice():[];
     $("invSheetTitulo").textContent=(item?"Comprobante":"Nuevo comprobante")+" · "+c.nombre;
-    $("invMontoL").textContent="Monto ("+MONEDAS[c.moneda].s+")";
+    $("invMon").value=item?(item.moneda||c.moneda):c.moneda;invMontoEtiqueta();
     $("invMonto").value=item?String(item.monto).replace(".",","):"";
     var t=new Date();$("invFecha").value=item?item.fecha:iso(t.getFullYear(),t.getMonth(),t.getDate());
     $("invMotivo").value=item?(item.motivo||""):"";
@@ -1122,12 +1130,12 @@ body{margin:0}
   $("invChips").addEventListener("click",function(ev){
     if(ev.target.closest("#invNuevaCarp")){invCarpEdit=null;$("carpTitulo").textContent="Nueva carpeta";$("carpNombre").value="";$("carpMoneda").value="BOB";$("carpMonedaL").hidden=false;$("carpGuardar").textContent="Crear carpeta";$("scrimCarp").hidden=false;setTimeout(function(){$("carpNombre").focus()},60);return}
     var b=ev.target.closest("[data-carp]");if(b){invSel=b.dataset.carp;invConfirmCarp=false;invRender()}});
-  $("invRenombrar").addEventListener("click",function(){var c=invCarpeta();invCarpEdit=c.id;$("carpTitulo").textContent="Cambiar nombre";$("carpNombre").value=c.nombre;$("carpMonedaL").hidden=true;$("carpGuardar").textContent="Guardar nombre";$("scrimCarp").hidden=false;setTimeout(function(){$("carpNombre").focus()},60)});
+  $("invRenombrar").addEventListener("click",function(){var c=invCarpeta();invCarpEdit=c.id;$("carpTitulo").textContent="Cambiar nombre o moneda";$("carpNombre").value=c.nombre;$("carpMoneda").value=c.moneda;$("carpMonedaL").hidden=false;$("carpGuardar").textContent="Guardar cambios";$("scrimCarp").hidden=false;setTimeout(function(){$("carpNombre").focus()},60)});
   $("closeCarp").addEventListener("click",function(){$("scrimCarp").hidden=true});
   $("scrimCarp").addEventListener("click",function(ev){if(ev.target===$("scrimCarp"))$("scrimCarp").hidden=true});
   $("carpForm").addEventListener("submit",function(ev){
     ev.preventDefault();var n=$("carpNombre").value.trim();if(!n)return;var d=invData();
-    if(invCarpEdit){var c=d.carpetas.find(function(x){return x.id===invCarpEdit});if(c)c.nombre=n}
+    if(invCarpEdit){var c=d.carpetas.find(function(x){return x.id===invCarpEdit});if(c){c.nombre=n;c.moneda=$("carpMoneda").value}}
     else{var nc={id:uid(),nombre:n,moneda:$("carpMoneda").value};d.carpetas.push(nc);invSel=nc.id}
     save();$("scrimCarp").hidden=true;invConfirmCarp=false;invRender()});
   $("invBorrarCarpeta").addEventListener("click",function(){
@@ -1152,7 +1160,7 @@ body{margin:0}
   $("invForm").addEventListener("submit",function(ev){
     ev.preventDefault();var monto=parseFloat(String($("invMonto").value).replace(/\./g,"").replace(",","."));
     if(!(monto>=0)){$("invMsg").textContent="Escribe el monto con números.";return}
-    var d=invData(),rec={carpeta:invSel,monto:Math.round(monto*100)/100,fecha:$("invFecha").value,motivo:$("invMotivo").value.trim(),fotos:invTmp.slice()};
+    var d=invData(),rec={carpeta:invSel,moneda:$("invMon").value,monto:Math.round(monto*100)/100,fecha:$("invFecha").value,motivo:$("invMotivo").value.trim(),fotos:invTmp.slice()};
     if(invEdit){var it=d.items.find(function(i){return i.id===invEdit});if(it)Object.assign(it,rec)}else{rec.id=uid();d.items.push(rec)}
     invQuitadas.forEach(function(f){fotoDel(f)});invNuevas=[];invQuitadas=[];save();invCerrarHoja(false)});
   $("invBorrarItem").addEventListener("click",function(){
