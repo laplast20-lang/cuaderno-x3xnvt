@@ -147,6 +147,11 @@ button.gr:active{background:var(--bg)}
 .tcrow select{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:9px 12px;font:inherit;font-size:.9rem}
 .tcbox .eq{font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--ink)}
 .invitem .eqs{color:var(--soft);font-size:.8rem}
+.tcstrip{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;border:1px solid var(--line);background:var(--card);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-radius:14px;padding:9px 14px;width:100%;text-align:left;font-size:.82rem;color:var(--soft)}
+.tcstrip .tcp{white-space:nowrap}
+.tcstrip .tcp b{color:var(--ink);font-weight:700}
+.tcstrip .tcp i{font-style:normal;color:var(--in);font-weight:700}
+.tcstrip small{font-size:.7rem;opacity:.85;margin-left:auto}
 .invmini{display:flex;gap:8px;flex-wrap:wrap}
 .invmini button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 13px;font-size:.8rem;font-weight:600;color:var(--soft)}
 .invitem{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:12px;text-align:left;width:100%}
@@ -276,6 +281,8 @@ body{margin:0}
     <span style="flex:1"></span>
     <button class="chip" id="notasBtn" type="button">✎ Notas</button>
   </header>
+
+  <button class="tcstrip num" type="button" id="tcStrip" aria-label="Tipos de cambio del Banco Central de Bolivia. Toca para actualizar"></button>
 
   <div class="example" id="exampleBar" hidden>
     <span>Estás viendo datos de ejemplo para que veas cómo queda. Nada de esto es tuyo.</span>
@@ -1069,13 +1076,23 @@ body{margin:0}
   function tcDeBs(b,mon){return mon==="BOB"?b:mon==="USD"?b/TC.usd_bob:b/TC.clp_bob}
   function tcConv(m,de,a){return de===a?m:tcDeBs(tcABs(m,de),a)}
   function coma(n,d){return n.toFixed(d).replace(".",",")}
+  function miles(n,d){var t=n.toFixed(d).split(".");t[0]=t[0].replace(/\B(?=(\d{3})+(?!\d))/g,".");return t.join(",")}
+  function tcStrip(){
+    var el=$("tcStrip");if(!el)return;
+    if(!TC){el.innerHTML='<span class="tcp">Tipo de cambio: conéctate a internet para cargarlo. Toca aquí.</span>';return}
+    var clpUsd=TC.clp_usd||(TC.usd_bob/TC.clp_bob),f=TC.fecha;
+    el.innerHTML='<span class="tcp"><b>$ 1</b> = <i>Bs '+miles(TC.usd_bob,2)+'</i></span>'+
+      '<span class="tcp"><b>$ 1</b> = <i>CLP '+miles(clpUsd,2)+'</i></span>'+
+      '<span class="tcp"><b>Bs 1</b> = <i>CLP '+miles(1/TC.clp_bob,2)+'</i></span>'+
+      '<small>BCB '+f.slice(8)+'/'+f.slice(5,7)+'/'+f.slice(0,4)+'</small>';
+  }
   function tcActualizar(){
     tcMsg="Buscando el tipo de cambio…";if(!$("v-inversion").hidden)invRender();
     return fetch("tipos-de-cambio.json?v="+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("http");return r.json()}).then(function(o){
       if(!(o&&o.usd_bob>0&&o.clp_bob>0))throw new Error("datos");
-      TC={fecha:o.fecha,usd_bob:o.usd_bob,clp_bob:o.clp_bob,leido:Date.now()};
+      TC={fecha:o.fecha,usd_bob:o.usd_bob,clp_bob:o.clp_bob,clp_usd:o.clp_por_usd||0,leido:Date.now()};
       try{localStorage.setItem(TC_KEY,JSON.stringify(TC))}catch(e){}
-      tcMsg="";invRender();
+      tcMsg="";tcStrip();invRender();
     }).catch(function(){tcMsg=TC?"No pude actualizar ahora. Se usa el último tipo de cambio guardado.":"No pude leer el tipo de cambio. Conéctate a internet y vuelve a intentar.";invRender()});
   }
   var invSel=null,invEdit=null,invNuevas=[],invTmp=[],invQuitadas=[],invCarpEdit=null,invConfirmItem=null,invConfirmCarp=false,visorFoto=null,fotoUrls={};
@@ -1178,6 +1195,7 @@ body{margin:0}
   $("invAgregar").addEventListener("click",function(){invAbrir(null)});
   $("invVer").addEventListener("change",function(){data.invVer=$("invVer").value;save();invRender()});
   $("tcActualizar").addEventListener("click",tcActualizar);
+  $("tcStrip").addEventListener("click",tcActualizar);
   $("invLista").addEventListener("click",function(ev){var b=ev.target.closest("[data-item]");if(!b)return;var it=invData().items.find(function(i){return i.id===b.dataset.item});if(it)invAbrir(it)});
   $("closeInv").addEventListener("click",function(){invCerrarHoja(true)});
   $("scrimInv").addEventListener("click",function(ev){if(ev.target===$("scrimInv"))invCerrarHoja(true)});
@@ -1243,7 +1261,7 @@ body{margin:0}
   if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
   document.body.classList.add("splash");
   $("entrar").addEventListener("click",function(){var pt=$("portada");pt.classList.add("fuera");document.body.classList.remove("splash");setTimeout(function(){pt.hidden=true},500);window.scrollTo(0,0)});
-  setTimeout(function(){tcActualizar()},400);
+  tcStrip();setTimeout(function(){tcActualizar()},400);
   load();$("inicialInp").value=(data.pref&&data.pref.inicial)||"";render();
   var h=(location.hash||"").replace("#","");show(["inicio","calendario","inversion","respaldo"].indexOf(h)>=0?h:"inicio");
   window.addEventListener("hashchange",function(){var h=(location.hash||"").replace("#","");if(["inicio","calendario","inversion","respaldo"].indexOf(h)>=0&&h!==vista)show(h)});
