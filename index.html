@@ -142,6 +142,11 @@ button.gr:active{background:var(--bg)}
 .invtot{flex-direction:column;align-items:flex-start;gap:2px}
 .invtot .tots{display:flex;flex-direction:column;align-items:flex-start;gap:0}
 .invtot .tots b{font-family:var(--font-display);font-size:1.6rem;color:var(--in);line-height:1.2}
+.tcbox{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:12px}
+.tcrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tcrow select{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:9px 12px;font:inherit;font-size:.9rem}
+.tcbox .eq{font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--ink)}
+.invitem .eqs{color:var(--soft);font-size:.8rem}
 .invmini{display:flex;gap:8px;flex-wrap:wrap}
 .invmini button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 13px;font-size:.8rem;font-weight:600;color:var(--soft)}
 .invitem{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:12px;text-align:left;width:100%}
@@ -394,6 +399,13 @@ body{margin:0}
     <section class="invcard" aria-label="Carpeta">
       <h2 id="invTitulo">Inversión</h2>
       <div class="invtot"><span class="note" id="invMoneda"></span><div class="tots num" id="invTotal"></div></div>
+      <div class="tcbox">
+        <div class="tcrow"><span class="note">Todo junto, equivalente en</span>
+          <select id="invVer" aria-label="Moneda para ver el total"><option value="BOB">Bs (Bolivianos)</option><option value="CLP">CLP (Pesos chilenos)</option><option value="USD">$ (Dólares)</option></select></div>
+        <b class="num eq" id="invEquiv"></b>
+        <p class="hint" id="tcInfo"></p>
+        <button class="btn" type="button" id="tcActualizar">Actualizar tipo de cambio</button>
+      </div>
       <button class="btn primary" type="button" id="invAgregar">+ Agregar comprobante</button>
       <div class="invmini">
         <button type="button" id="invRenombrar">Cambiar nombre</button>
@@ -764,7 +776,7 @@ body{margin:0}
     vista=v;
     ["inicio","calendario","inversion","respaldo"].forEach(function(n){$("v-"+n).hidden=n!==v});
     document.querySelectorAll(".bar button").forEach(function(b){if(b.dataset.view===v)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
-    $("monthbar").hidden=v==="respaldo"||v==="inversion";if(v==="inversion")invRender();
+    $("monthbar").hidden=v==="respaldo"||v==="inversion";if(v==="inversion"){invRender();if(!TC||!TC.leido||Date.now()-TC.leido>30*60*1000)tcActualizar()}
     try{history.replaceState(null,"","#"+v)}catch(e){}
   }
 
@@ -1050,6 +1062,22 @@ body{margin:0}
   // ---------- Inversión: carpetas con comprobantes (foto + monto + fecha + motivo)
   var MONEDAS={CLP:{s:"CLP",d:0},BOB:{s:"Bs",d:2},USD:{s:"$",d:2}};
   var NOMBRE_MON={CLP:"Pesos chilenos",BOB:"Bolivianos",USD:"Dólares"};
+  // Tipo de cambio oficial del Banco Central de Bolivia (lo deja listo un proceso automático en tipos-de-cambio.json)
+  var TC=null,TC_KEY="cuaderno-tc",tcMsg="";
+  try{var _r=localStorage.getItem(TC_KEY);if(_r){var _o=JSON.parse(_r);if(_o&&_o.usd_bob>0&&_o.clp_bob>0)TC=_o}}catch(e){}
+  function tcABs(m,mon){return mon==="BOB"?m:mon==="USD"?m*TC.usd_bob:m*TC.clp_bob}
+  function tcDeBs(b,mon){return mon==="BOB"?b:mon==="USD"?b/TC.usd_bob:b/TC.clp_bob}
+  function tcConv(m,de,a){return de===a?m:tcDeBs(tcABs(m,de),a)}
+  function coma(n,d){return n.toFixed(d).replace(".",",")}
+  function tcActualizar(){
+    tcMsg="Buscando el tipo de cambio…";if(!$("v-inversion").hidden)invRender();
+    return fetch("tipos-de-cambio.json?v="+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("http");return r.json()}).then(function(o){
+      if(!(o&&o.usd_bob>0&&o.clp_bob>0))throw new Error("datos");
+      TC={fecha:o.fecha,usd_bob:o.usd_bob,clp_bob:o.clp_bob,leido:Date.now()};
+      try{localStorage.setItem(TC_KEY,JSON.stringify(TC))}catch(e){}
+      tcMsg="";invRender();
+    }).catch(function(){tcMsg=TC?"No pude actualizar ahora. Se usa el último tipo de cambio guardado.":"No pude leer el tipo de cambio. Conéctate a internet y vuelve a intentar.";invRender()});
+  }
   var invSel=null,invEdit=null,invNuevas=[],invTmp=[],invQuitadas=[],invCarpEdit=null,invConfirmItem=null,invConfirmCarp=false,visorFoto=null,fotoUrls={};
   function invData(){
     if(!data.inv||!Array.isArray(data.inv.carpetas)||!Array.isArray(data.inv.items))data.inv={carpetas:[],items:[]};
@@ -1097,10 +1125,15 @@ body{margin:0}
     var ords=["BOB","CLP","USD"].filter(function(mo){return porMon[mo]!==undefined});if(!ords.length)ords=[c.moneda];
     $("invTitulo").textContent=c.nombre;$("invMoneda").textContent=items.length+(items.length===1?" comprobante":" comprobantes")+(ords.length>1?" · una suma por moneda":"");
     $("invTotal").innerHTML=ords.map(function(mo){return '<b>'+dinero(porMon[mo]||0,mo)+'</b>'}).join("");
+    var ver=(data.invVer&&MONEDAS[data.invVer])?data.invVer:"BOB";$("invVer").value=ver;
+    if(TC){var totBs=items.reduce(function(a,i){return a+tcABs(i.monto,i.moneda||c.moneda)},0);$("invEquiv").textContent="≈ "+dinero(tcDeBs(totBs,ver),ver);$("invEquiv").hidden=false;
+      $("tcInfo").textContent=(tcMsg?tcMsg+" ":"")+"Tipo de cambio oficial del Banco Central de Bolivia al "+TC.fecha.slice(8)+"/"+TC.fecha.slice(5,7)+"/"+TC.fecha.slice(0,4)+": $ 1 = Bs "+coma(TC.usd_bob,2)+" · CLP 1.000 = Bs "+coma(TC.clp_bob*1000,2)+". Se actualiza solo."}
+    else{$("invEquiv").hidden=true;$("tcInfo").textContent=tcMsg||"Todavía no hay tipo de cambio. Conéctate a internet y pulsa Actualizar."}
     $("invBorrarCarpeta").textContent=invConfirmCarp?"¿Seguro? Toca otra vez":"Borrar carpeta";
     $("invAviso").textContent=invConfirmCarp?"Se borra la carpeta con todos sus comprobantes y fotos. No se puede deshacer.":"";
     $("invLista").innerHTML=items.length?items.map(function(i){
       return '<button type="button" class="invitem" data-item="'+i.id+'"><span class="top"><b class="num">'+dinero(i.monto,i.moneda||c.moneda)+'</b><small>'+fdate(i.fecha)+' '+i.fecha.slice(0,4)+'</small></span>'+
+        ((TC&&(i.moneda||c.moneda)!==ver)?'<span class="eqs num">≈ '+dinero(tcConv(i.monto,i.moneda||c.moneda,ver),ver)+' al cambio de hoy</span>':'')+
         (i.motivo?'<span class="mot">'+esc(i.motivo)+'</span>':'')+
         ((i.fotos&&i.fotos.length)?'<span class="fotos">'+i.fotos.map(function(f){return '<span class="fthumb"><img data-foto="'+f+'" alt="Comprobante"></span>'}).join("")+'</span>':'<small>Sin foto</small>')+
         '<small>Toca para ver o cambiar</small></button>'}).join(""):'<p class="hint">Todavía no hay comprobantes en esta carpeta. Pulsa "+ Agregar comprobante" y sube la foto del pago con su monto, fecha y motivo.</p>';
@@ -1143,6 +1176,8 @@ body{margin:0}
     var d=invData(),id=invSel;d.items.filter(function(i){return i.carpeta===id}).forEach(function(i){(i.fotos||[]).forEach(function(f){fotoDel(f)})});
     d.items=d.items.filter(function(i){return i.carpeta!==id});d.carpetas=d.carpetas.filter(function(c){return c.id!==id});invSel=null;invConfirmCarp=false;save();invRender()});
   $("invAgregar").addEventListener("click",function(){invAbrir(null)});
+  $("invVer").addEventListener("change",function(){data.invVer=$("invVer").value;save();invRender()});
+  $("tcActualizar").addEventListener("click",tcActualizar);
   $("invLista").addEventListener("click",function(ev){var b=ev.target.closest("[data-item]");if(!b)return;var it=invData().items.find(function(i){return i.id===b.dataset.item});if(it)invAbrir(it)});
   $("closeInv").addEventListener("click",function(){invCerrarHoja(true)});
   $("scrimInv").addEventListener("click",function(ev){if(ev.target===$("scrimInv"))invCerrarHoja(true)});
@@ -1208,6 +1243,7 @@ body{margin:0}
   if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
   document.body.classList.add("splash");
   $("entrar").addEventListener("click",function(){var pt=$("portada");pt.classList.add("fuera");document.body.classList.remove("splash");setTimeout(function(){pt.hidden=true},500);window.scrollTo(0,0)});
+  setTimeout(function(){tcActualizar()},400);
   load();$("inicialInp").value=(data.pref&&data.pref.inicial)||"";render();
   var h=(location.hash||"").replace("#","");show(["inicio","calendario","inversion","respaldo"].indexOf(h)>=0?h:"inicio");
   window.addEventListener("hashchange",function(){var h=(location.hash||"").replace("#","");if(["inicio","calendario","inversion","respaldo"].indexOf(h)>=0&&h!==vista)show(h)});

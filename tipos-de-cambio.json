@@ -1,0 +1,16 @@
+{
+ "fuente": "Banco Central de Bolivia - Tabla de Cotizaciones",
+ "url": "https://www.bcb.gob.bo/librerias/indicadores/otras/ultimo.php",
+ "fecha": "2026-11-27",
+ "usd_bob": 11.85,
+ "clp_bob": 0.01139,
+ "clp_por_usd": 1040.55,
+ "historial": [
+  {
+   "fecha": "2026-11-27",
+   "usd_bob": 11.85,
+   "clp_bob": 0.01139
+  }
+ ],
+ "actualizado": "2026-11-27T23:46:11Z"
+}
